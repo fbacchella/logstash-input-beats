@@ -11,6 +11,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import javax.net.ssl.SSLEngine;
@@ -170,7 +171,8 @@ public class SslSimpleBuilder {
             logger.debug("Loading certificates from file " + certificate);
 
             try (InputStream in = new FileInputStream(certificate)) {
-                List<X509Certificate> certificatesChains = (List<X509Certificate>) certificateFactory.generateCertificates(in);
+                @SuppressWarnings("unchecked")
+                Collection<? extends X509Certificate> certificatesChains = (Collection<? extends X509Certificate>) certificateFactory.generateCertificates(in);
                 collections.addAll(certificatesChains);
             }
         }

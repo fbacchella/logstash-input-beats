@@ -67,8 +67,7 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
         payload.writeInt(message.getSequence());
         payload.writeInt(message.getData().size());
 
-        for (Object entry : message.getData().entrySet()) {
-            Map.Entry e = (Map.Entry) entry;
+        for (Map.Entry<?, ?> e : message.getData().entrySet()) {
             byte[] key = ((String) e.getKey()).getBytes();
             byte[] value = ((String) e.getValue()).getBytes();
 
@@ -80,6 +79,7 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
             payload.writeBytes(value);
         }
     }
+
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
     }

@@ -13,7 +13,7 @@ public class Message implements Comparable<Message> {
 
     private final int sequence;
     private String identityStream;
-    private Map data;
+    private Map<?, ?> data;
     private Batch batch;
     private ByteBuf buffer;
 
@@ -24,7 +24,7 @@ public class Message implements Comparable<Message> {
      * @param sequence sequence number of the message
      * @param map key/value pairs representing the message
      */
-    public Message(int sequence, Map map) {
+    public Message(int sequence, Map<?, ?> map) {
         this.sequence = sequence;
         this.data = map;
     }
@@ -53,7 +53,7 @@ public class Message implements Comparable<Message> {
      * Note that this method is lazy if the Message was created using a {@link ByteBuf}
      * @return {@link Map} Map of key/value pairs
      */
-    public Map getData() {
+    public Map<?, ?> getData() {
         if (data == null && buffer != null) {
             try (ByteBufInputStream byteBufInputStream = new ByteBufInputStream(buffer)) {
                 data = MAPPER.readValue((InputStream) byteBufInputStream, Map.class);
@@ -87,7 +87,8 @@ public class Message implements Comparable<Message> {
     }
 
     private String extractIdentityStream() {
-        Map beatsData = (Map<String, String>) getData().get("beat");
+        @SuppressWarnings("unchecked")
+        Map<String, String> beatsData = (Map<String, String>) getData().get("beat");
 
         if (beatsData != null) {
             String id = (String) beatsData.get("id");

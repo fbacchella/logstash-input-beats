@@ -118,7 +118,7 @@ public class BeatsParser extends ByteToMessageDecoder {
                 throw new InvalidFrameProtocolException("Invalid number of fields, received: " + fieldsCount);
             }
 
-            Map dataMap = new HashMap<String, String>(fieldsCount);
+            Map<String, String> dataMap = new HashMap<>(fieldsCount);
 
             while (count < fieldsCount) {
                 int fieldLength = (int) in.readUnsignedInt();

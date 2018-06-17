@@ -38,7 +38,7 @@ public class BeatsParserTest {
         this.v1Batch = new V1Batch();
 
         for (int i = 1; i <= numberOfMessage; i++) {
-            Map map = new HashMap<String, String>();
+            Map<String, String> map = new HashMap<>();
             map.put("line", "Another world");
             map.put("from", "Little big Adventure");
 
@@ -49,7 +49,7 @@ public class BeatsParserTest {
         this.byteBufBatch = new V2Batch();
 
         for (int i = 1; i <= numberOfMessage; i++) {
-            Map map = new HashMap<String, String>();
+            Map<String, String> map = new HashMap<>();
             map.put("line", "Another world");
             map.put("from", "Little big Adventure");
             ByteBuf bytebuf = Unpooled.wrappedBuffer(MAPPER.writeValueAsBytes(map));
@@ -85,7 +85,7 @@ public class BeatsParserTest {
         for (int i = 0; i < numberOfMessage; i++) {
             ByteBuf payload = Unpooled.buffer();
 
-            Map map = new HashMap<String, String>();
+            Map<String, String> map = new HashMap<>();
             map.put("étoile", "mystère");
             map.put("from", "ÉeèAççï");
 
@@ -106,7 +106,7 @@ public class BeatsParserTest {
         // Generate Data with Keys and String with UTF-8
         for (int i = 0; i < numberOfMessage; i++) {
 
-            Map map = new HashMap<String, String>();
+            Map<String, String> map = new HashMap<>();
             map.put("étoile", "mystère");
             map.put("from", "ÉeèAççï");
 
@@ -185,7 +185,7 @@ public class BeatsParserTest {
         thrown.expectCause(isA(BeatsParser.InvalidFrameProtocolException.class));
         thrown.expectMessage("Invalid json length, received: " + size);
 
-        Map mapData = Collections.singletonMap("message", "hola");
+        Map<String, String> mapData = Collections.singletonMap("message", "hola");
 
         ByteBuf payload = Unpooled.buffer();
 
@@ -221,13 +221,12 @@ public class BeatsParserTest {
             Message expectedMessage = expectedMessages.next();
             assertEquals(expectedMessage.getSequence(), actualMessage.getSequence());
 
-            Map expectedData = expectedMessage.getData();
-            Map actualData = actualMessage.getData();
+            Map<?, ?> expectedData = expectedMessage.getData();
+            Map<?, ?> actualData = actualMessage.getData();
 
             assertEquals(expectedData.size(), actualData.size());
 
-            for (Object entry : expectedData.entrySet()) {
-                Map.Entry e = (Map.Entry) entry;
+            for (Map.Entry<?, ?> e : expectedData.entrySet()) {
                 String key = (String) e.getKey();
                 String value = (String) e.getValue();
 

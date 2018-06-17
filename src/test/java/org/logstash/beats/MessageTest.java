@@ -16,7 +16,7 @@ public class MessageTest {
 
     @Test
     public void testGetData() {
-        Map<Object, Object> map = new HashMap();
+        Map<Object, Object> map = new HashMap<>();
 
         Message message = new Message(1, map);
         assertEquals(map, message.getData());
@@ -24,7 +24,7 @@ public class MessageTest {
 
     @Test
     public void testGetSequence() {
-        Map<Object, Object> map = new HashMap();
+        Map<Object, Object> map = new HashMap<>();
 
         Message message = new Message(1, map);
         assertEquals(1, message.getSequence());
@@ -32,7 +32,7 @@ public class MessageTest {
 
     @Test
     public void testComparison() {
-        Map<Object, Object> map = new HashMap();
+        Map<Object, Object> map = new HashMap<>();
         Message messageOlder = new Message(1, map);
         Message messageNewer = new Message(2, map);
 
@@ -41,8 +41,8 @@ public class MessageTest {
 
     @Test
     public void tesGenerateAnIdentityStreamWhenIdAndResourceArePresent() {
-        Map<Object, Object> map = new HashMap();
-        Map<String, String> beatsData = new HashMap();
+        Map<Object, Object> map = new HashMap<>();
+        Map<String, String> beatsData = new HashMap<>();
 
         beatsData.put("id", "uuid1234");
         beatsData.put("resource_id", "rid1234");
@@ -55,8 +55,8 @@ public class MessageTest {
 
     @Test
     public void tesGenerateAnIdentityStreamWhenResourceIdIsAbsent() {
-        Map<Object, Object> map = new HashMap();
-        Map<String, String> beatsData = new HashMap();
+        Map<Object, Object> map = new HashMap<>();
+        Map<String, String> beatsData = new HashMap<>();
 
         beatsData.put("id", "uuid1234");
         beatsData.put("name", "filebeat");
@@ -71,8 +71,8 @@ public class MessageTest {
 
     @Test
     public void tesGenerateAnIdentityStreamWhenIdIsAbsent() {
-        Map<Object, Object> map = new HashMap();
-        Map<String, String> beatsData = new HashMap();
+        Map<Object, Object> map = new HashMap<>();
+        Map<String, String> beatsData = new HashMap<>();
 
         beatsData.put("resource_id", "rid1234");
         beatsData.put("name", "filebeat");
@@ -85,8 +85,8 @@ public class MessageTest {
     }
 
     @Test
-    public void tesGenerateAnIdentityStreamWhenIdAndResourceIdareAbsent() {
-        Map<Object, Object> map = new HashMap();
+    public void tesGenerateAnIdentityStreamWhenIdAndResourceIdAreAbsent() {
+        Map<Object, Object> map = new HashMap<>();
 
         Message message = new Message(1, map);
 

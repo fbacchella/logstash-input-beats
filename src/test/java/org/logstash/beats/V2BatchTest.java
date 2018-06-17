@@ -90,7 +90,7 @@ public class V2BatchTest {
     }
 
     public static ByteBuf messageContents() {
-        Map test = new HashMap();
+        Map<String, String> test = new HashMap<>();
         test.put("key", "value");
         try {
             byte[] bytes = MAPPER.writeValueAsBytes(test);

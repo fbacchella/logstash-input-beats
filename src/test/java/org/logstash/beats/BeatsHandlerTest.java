@@ -81,8 +81,8 @@ public class BeatsHandlerTest {
         spyListener = new SpyListener();
         beatsHandler = new BeatsHandler(spyListener);
 
-        Message message1 = new Message(1, new HashMap());
-        Message message2 = new Message(2, new HashMap());
+        Message message1 = new Message(1, new HashMap<Object, Object>());
+        Message message2 = new Message(2, new HashMap<Object, Object>());
 
         batch = new V1Batch();
         batch.setBatchSize(2);
