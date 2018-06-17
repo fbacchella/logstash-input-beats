@@ -19,19 +19,15 @@ import static org.junit.Assert.assertTrue;
 public class BeatsHandlerTest {
 
     private SpyListener spyListener;
-    private BeatsHandler beatsHandler;
     private V1Batch batch;
 
     private class SpyListener implements IMessageListener {
         private boolean onNewConnectionCalled = false;
-        private boolean onNewMessageCalled = false;
         private boolean onConnectionCloseCalled = false;
-        private boolean onExceptionCalled = false;
         private final List<Message> lastMessages = new ArrayList<Message>();
 
         @Override
         public void onNewMessage(ChannelHandlerContext ctx, Message message) {
-            onNewMessageCalled = true;
             lastMessages.add(message);
         }
 
@@ -48,7 +44,6 @@ public class BeatsHandlerTest {
 
         @Override
         public void onException(ChannelHandlerContext ctx, Throwable cause) {
-            onExceptionCalled = true;
         }
 
         @Override
@@ -59,10 +54,6 @@ public class BeatsHandlerTest {
             return onNewConnectionCalled;
         }
 
-        public boolean isOnNewMessageCalled() {
-            return onNewMessageCalled;
-        }
-
         public boolean isOnConnectionCloseCalled() {
             return onConnectionCloseCalled;
         }
@@ -71,15 +62,11 @@ public class BeatsHandlerTest {
             return lastMessages;
         }
 
-        public boolean isOnExceptionCalled() {
-            return onExceptionCalled;
-        }
     }
 
     @Before
     public void setup() {
         spyListener = new SpyListener();
-        beatsHandler = new BeatsHandler(spyListener);
 
         Message message1 = new Message(1, new HashMap<Object, Object>());
         Message message2 = new Message(2, new HashMap<Object, Object>());

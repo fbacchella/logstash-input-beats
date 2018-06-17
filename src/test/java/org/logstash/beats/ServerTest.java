@@ -1,5 +1,20 @@
 package org.logstash.beats;
 
+import static java.lang.Thread.sleep;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.number.IsCloseTo.closeTo;
+
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.junit.Before;
+import org.junit.Test;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFuture;
@@ -12,21 +27,6 @@ import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.util.Collections;
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static java.lang.Thread.sleep;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.number.IsCloseTo.closeTo;
 
 
 public class ServerTest {
@@ -110,8 +110,6 @@ public class ServerTest {
     public void testServerShouldTerminateConnectionIdleForTooLong() throws InterruptedException {
         int inactivityTime = 3; // in seconds
         int concurrentConnections = 10;
-
-        final Random random = new Random();
 
         final CountDownLatch latch = new CountDownLatch(concurrentConnections);
         final AtomicBoolean exceptionClose = new AtomicBoolean(false);
@@ -251,28 +249,6 @@ public class ServerTest {
     }
 
 
-    /**
-     * A dummy class to send a unique batch to an active server
-     *
-     */
-    private class DummyV1Sender extends SimpleChannelInboundHandler<String> {
-        public void channelActive(ChannelHandlerContext ctx) {
-            V1Batch batch = new V1Batch();
-            batch.setBatchSize(1);
-            batch.addMessage(new Message(1, Collections.singletonMap("hello", "world")));
-
-            ctx.writeAndFlush(batch);
-        }
-
-        @Override
-        protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
-        }
-
-        @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-            ctx.close();
-        }
-    }
 
     /**
      * A dummy class to send a unique batch to an active server

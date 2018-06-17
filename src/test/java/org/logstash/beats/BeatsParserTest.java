@@ -215,7 +215,6 @@ public class BeatsParserTest {
         assertNotNull(actual);
         assertEquals(expected.size(), actual.size());
 
-        int i = 0;
         Iterator<Message> expectedMessages = expected.iterator();
         for (Message actualMessage: actual) {
             Message expectedMessage = expectedMessages.next();
