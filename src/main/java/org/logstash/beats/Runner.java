@@ -10,8 +10,6 @@ public class Runner {
 
     private final static Logger logger = LogManager.getLogger(Runner.class);
 
-
-
     static public void main(String[] args) throws Exception {
         logger.info("Starting Beats Bulk");
 
@@ -25,10 +23,7 @@ public class Runner {
 
             String sslCertificate = "/Users/ph/es/certificates/certificate.crt";
             String sslKey = "/Users/ph/es/certificates/certificate.pkcs8.key";
-            String noPkcs7SslKey = "/Users/ph/es/certificates/certificate.key";
             String[] certificateAuthorities = new String[] { "/Users/ph/es/certificates/certificate.crt" };
-
-
 
             SslSimpleBuilder sslBuilder = new SslSimpleBuilder(sslCertificate, sslKey, null)
                     .setProtocols(new String[] { "TLSv1.2" })
