@@ -1,5 +1,9 @@
 sudo: false
 install: true
+branches:
+  only:
+  - master
+  - netty_only
 jdk:
   - oraclejdk10
 cache:
