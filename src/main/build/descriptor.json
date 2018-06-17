@@ -1,0 +1,32 @@
+{
+  "package": {
+    "name": "netty-beats",
+    "repo": "maven",
+    "subject": "fbacchella",
+    "desc": "A netty module for Elastic's beat",
+    "website_url": "https://github.com/fbacchella/logstash-input-beats",
+    "vcs_url": "https://github.com/fbacchella/logstash-input-beats.git",
+    "github_use_tag_release_notes": false,
+    "licenses": [
+      "Apache License 2.0"
+    ],
+    "labels": [],
+    "public_download_numbers": true,
+    "public_stats": true,
+    "attributes": []
+  },
+  "version": {
+    "name": "${project.version}"
+  },
+  "files": [
+    {
+      "includePattern": "target/(.*\\.jar)",
+      "uploadPattern": "/fr/loghub/netty-beats/${project.version}/$1"
+    },
+    {
+      "includePattern": "pom.xml",
+      "uploadPattern": "/fr/loghub/netty-beats/${project.version}/netty-beats-${project.version}.pom"
+    }
+  ],
+  "publish": true
+}
