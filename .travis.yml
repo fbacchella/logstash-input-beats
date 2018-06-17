@@ -4,15 +4,15 @@ branches:
   - release
   - netty_only
 jdk:
-  - oraclejdk10
+- oraclejdk10
 cache:
   directories:
-    - '$HOME/.m2/repository'
+  - "$HOME/.m2/repository"
 deploy:
-    provider: bintray
-    file: "target/descriptor.json"
-    user: "fbacchella"
-    skip_cleanup: true
-    on: "release"
-    key:
-        secure: joBFFpOZrd8k6lRKSENJrQsGUPAbD51NblgmILHUIRpOR5IE3E7l7PlHTJjN86NnK41n+PuZ0BusbzzETcKMCbeCmcnwRBSTJrq+JJIiNsYDin1nUEPZLk+A6hBdL8m0feA+nTiwoG7F8BlllQdySVI5YFrpQrPuX+65XdYkOfhee8NuMhT8uqPkmQ2LwvsHN2Plvx/LyxslXZ8zxdb9+8Iaq4NtYHTW5R6dIbhYSV++QeKPd9L1uatN5+0pCyqJxd5Wk/UhmQC0q8oGwa03e461GPsYcmriLsGitmvdUE1gy4nbSsoh15LNTtbo9vE0zzrqXNxr+IizTwtKJHGiyHAPtJWG9wG6Jgtp30BK23S7f1umIi+ZinZxdj/K2ItheO0J0xJIEVzmsUqzcq2A/6lOtC3rzxsAILQpzIWi6jbA/GGZc9ILO9wTYs5Js4UHKLbNZU2s09DD04JSIYjHDJ8BSokNE7pXVqbU12pUjCWBesSRAJEHj0Xp54utvlqSJZwBVuEbx6WF3vbe6eiI9mmKGuP4iZr7zVU5RjOcD9oH840chjyDMqhaNqj8L2e1BgcQMH53f5jLW8IazSaJAe1jwCXT5EtbO1nNLNFpvV+p4gb/k2JOige8/keVRnC5lKSYMHI3wZhG8DB2WcyNTg1WrXDsY5YmACG4oHsIcgQ=
+  provider: bintray
+  file: target/descriptor.json
+  user: fbacchella
+  skip_cleanup: true
+  on: release
+  key:
+    secure: hliXllPBU8/qj9QnmyMgknds5FiKhPcnGVtWV8oTDu7sMHua3W4/AI9og8SYREliR1W8VpIrPuB3PpmbLZjttT0KzNtDaJfyeswZatQ++W2fCAIibW9ID+6hheX0okM/IRa+kPGBxsTdAnm6FGWA5AqbFHuW2kx13Ms3HNurPTtLd1/xChaHGjgVt7zHWhroiMlINWsh3wnMW6+Xa6B3nxgMR6eu4B2+4u/9fpCWNi5F2em2FaMNhVOyFOgGIhvySsK9y/2f7u5HKdNJXptCHqS9Y9WMwVupje+wLbJqDVxnI3MLiaSh1l4MgU1gGcGC7GpzbyqjUyXIeluYiZO7ZdgOcjlsvfZ6OJbT17VuTPQkQnBeaI3kG0p+ZHlO6i2/Fu/s5KnCop1scX9pwNbJyXKtVzix2QwZ7mzweP6jYNI92eOP4z5oS1U7h9e9VVWG/FnbAbOYSuA7JuS8HsYeE4eoGgTqUa1x8Uufgd2QwYykM39cCjMImZkg+SLpXETDxkaCrrzNMHwCJHmLggBoX4dZcJqp3MRMJ63DTxohDrRZK+0M/PocK1isDORhX7UMzgqCfoX3mjB+VzN3RXyrvNHfWfQH6KVyOpU0+PSxiJIOsJsYqvE/j7bEpnSFbuRwiSz0wp+twy+BD/SkWpWGJvgRtOmbs/nHPMrvMbGf47Y=
