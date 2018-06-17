@@ -30,6 +30,7 @@ import static org.hamcrest.number.IsCloseTo.closeTo;
 
 
 public class ServerTest {
+
     private int randomPort;
     private EventLoopGroup group;
     private final String host = "0.0.0.0";
@@ -131,7 +132,7 @@ public class ServerTest {
 
             @Override
             public void onException(ChannelHandlerContext ctx, Throwable cause) {
-                    exceptionClose.set(true);
+                exceptionClose.set(true);
             }
         });
 
@@ -161,7 +162,7 @@ public class ServerTest {
             long ended = System.currentTimeMillis();
 
             long diff = ended - started;
-            assertThat(diff/1000.0, is(closeTo(inactivityTime, .5)));
+            assertThat(diff / 1000.0, is(closeTo(inactivityTime, .5)));
             assertThat(exceptionClose.get(), is(false));
         } finally {
             server.stop();
@@ -189,7 +190,7 @@ public class ServerTest {
         // Each connection is sending 1 batch.
         int ConcurrentConnections = 5;
 
-        for(int i = 0; i < ConcurrentConnections; i++) {
+        for (int i = 0; i < ConcurrentConnections; i++) {
             Runnable clientTask = new Runnable(){
 
                 @Override
@@ -216,7 +217,7 @@ public class ServerTest {
         int maxIteration = 30;
 
 
-        while(listener.getReceivedCount() < ConcurrentConnections) {
+        while (listener.getReceivedCount() < ConcurrentConnections) {
             Thread.sleep(1000);
             iteration++;
 
@@ -234,19 +235,19 @@ public class ServerTest {
     }
 
     public ChannelFuture connectClient() throws InterruptedException {
-            Bootstrap b = new Bootstrap();
-            b.group(group)
-                    .channel(NioSocketChannel.class)
-                    .handler(new ChannelInitializer<SocketChannel>() {
-                                 @Override
-                                 public void initChannel(SocketChannel ch) throws Exception {
-                                     ChannelPipeline pipeline = ch.pipeline();
-                                     pipeline.addLast(new BatchEncoder());
-                                     pipeline.addLast(new DummyV2Sender());
-                                 }
-                             }
-                    );
-            return b.connect("localhost", randomPort);
+        Bootstrap b = new Bootstrap();
+        b.group(group)
+        .channel(NioSocketChannel.class)
+        .handler(new ChannelInitializer<SocketChannel>() {
+            @Override
+            public void initChannel(SocketChannel ch) throws Exception {
+                ChannelPipeline pipeline = ch.pipeline();
+                pipeline.addLast(new BatchEncoder());
+                pipeline.addLast(new DummyV2Sender());
+            }
+        }
+                        );
+        return b.connect("localhost", randomPort);
     }
 
 
@@ -304,7 +305,7 @@ public class ServerTest {
     private class SpyListener extends MessageListener {
         private AtomicInteger receivedCount;
 
-        public SpyListener() {
+        SpyListener() {
             super();
             receivedCount = new AtomicInteger(0);
         }
@@ -317,4 +318,5 @@ public class ServerTest {
             return receivedCount.get();
         }
     }
+
 }

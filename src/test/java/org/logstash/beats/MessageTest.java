@@ -13,8 +13,9 @@ import static org.junit.Assert.assertNull;
 
 
 public class MessageTest {
+
     @Test
-    public void TestGetData() {
+    public void testGetData() {
         Map<Object, Object> map = new HashMap();
 
         Message message = new Message(1, map);
@@ -22,7 +23,7 @@ public class MessageTest {
     }
 
     @Test
-    public void TestGetSequence() {
+    public void testGetSequence() {
         Map<Object, Object> map = new HashMap();
 
         Message message = new Message(1, map);
@@ -30,7 +31,7 @@ public class MessageTest {
     }
 
     @Test
-    public void TestComparison() {
+    public void testComparison() {
         Map<Object, Object> map = new HashMap();
         Message messageOlder = new Message(1, map);
         Message messageNewer = new Message(2, map);
@@ -39,7 +40,7 @@ public class MessageTest {
     }
 
     @Test
-    public void TesGenerateAnIdentityStreamWhenIdAndResourceArePresent() {
+    public void tesGenerateAnIdentityStreamWhenIdAndResourceArePresent() {
         Map<Object, Object> map = new HashMap();
         Map<String, String> beatsData = new HashMap();
 
@@ -53,7 +54,7 @@ public class MessageTest {
     }
 
     @Test
-    public void TesGenerateAnIdentityStreamWhenResourceIdIsAbsent() {
+    public void tesGenerateAnIdentityStreamWhenResourceIdIsAbsent() {
         Map<Object, Object> map = new HashMap();
         Map<String, String> beatsData = new HashMap();
 
@@ -69,7 +70,7 @@ public class MessageTest {
 
 
     @Test
-    public void TesGenerateAnIdentityStreamWhenIdIsAbsent() {
+    public void tesGenerateAnIdentityStreamWhenIdIsAbsent() {
         Map<Object, Object> map = new HashMap();
         Map<String, String> beatsData = new HashMap();
 
@@ -84,11 +85,12 @@ public class MessageTest {
     }
 
     @Test
-    public void TesGenerateAnIdentityStreamWhenIdAndResourceIdareAbsent() {
+    public void tesGenerateAnIdentityStreamWhenIdAndResourceIdareAbsent() {
         Map<Object, Object> map = new HashMap();
 
         Message message = new Message(1, map);
 
         assertNull(message.getIdentityStream());
     }
+
 }

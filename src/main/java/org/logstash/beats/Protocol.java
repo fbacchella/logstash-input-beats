@@ -4,6 +4,7 @@ package org.logstash.beats;
  * Created by ph on 2016-05-16.
  */
 public class Protocol {
+
     public static final byte VERSION_1 = '1';
     public static final byte VERSION_2 = '2';
 
@@ -12,7 +13,12 @@ public class Protocol {
     public static final byte CODE_COMPRESSED_FRAME = 'C';
     public static final byte CODE_FRAME = 'D';
 
+    private Protocol() {
+
+    }
+
     public static boolean isVersion2(byte versionRead) {
         return Protocol.VERSION_2 == versionRead;
     }
+
 }

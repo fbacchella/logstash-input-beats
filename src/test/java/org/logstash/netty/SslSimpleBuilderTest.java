@@ -8,6 +8,7 @@ import static org.junit.Assert.*;
  * Unit test for {@link SslSimpleBuilder}
  */
 public class SslSimpleBuilderTest {
+
     @Test
     public void setProtocols() throws Exception {
         SslSimpleBuilder sslSimpleBuilder = new SslSimpleBuilder("/tmp", "mykeyfile", "mypass");
@@ -17,4 +18,5 @@ public class SslSimpleBuilderTest {
         sslSimpleBuilder.setProtocols(new String[]{"TLSv1.1", "TLSv1.2"});
         assertArrayEquals(new String[]{"TLSv1.1", "TLSv1.2"}, sslSimpleBuilder.getProtocols());
     }
+
 }

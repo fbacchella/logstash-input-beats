@@ -10,9 +10,9 @@ import org.apache.logging.log4j.Logger;
  * this class is used to link the events triggered from the different connection to the actual
  * work inside the plugin.
  */
-// This need to be implemented in Ruby
 public class MessageListener implements IMessageListener {
-    private final static Logger logger = LogManager.getLogger(MessageListener.class);
+
+    private static final Logger logger = LogManager.getLogger(MessageListener.class);
 
 
     /**
@@ -65,4 +65,5 @@ public class MessageListener implements IMessageListener {
     public void onChannelInitializeException(ChannelHandlerContext ctx, Throwable cause) {
         logger.debug("onException");
     }
+
 }

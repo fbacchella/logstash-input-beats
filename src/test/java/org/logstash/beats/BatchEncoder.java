@@ -18,6 +18,7 @@ import java.util.Map;
  *
  */
 public class BatchEncoder extends MessageToByteEncoder<Batch> {
+
     private final static Logger logger = LogManager.getLogger(BatchEncoder.class);
 
 
@@ -40,7 +41,7 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
         ByteBuf payload = ctx.alloc().buffer();
 
         // Aggregates the payload that we could decide to compress or not.
-        for(Message message : batch) {
+        for (Message message : batch) {
             if (batch.getProtocol() == Protocol.VERSION_2) {
                 encodeMessageWithJson(payload, message);
             } else {
@@ -66,7 +67,7 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
         payload.writeInt(message.getSequence());
         payload.writeInt(message.getData().size());
 
-        for(Object entry : message.getData().entrySet()) {
+        for (Object entry : message.getData().entrySet()) {
             Map.Entry e = (Map.Entry) entry;
             byte[] key = ((String) e.getKey()).getBytes();
             byte[] value = ((String) e.getValue()).getBytes();
@@ -80,5 +81,7 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
         }
     }
     @Override
-    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {}
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+    }
+
 }

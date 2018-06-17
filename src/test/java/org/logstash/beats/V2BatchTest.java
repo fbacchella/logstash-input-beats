@@ -15,7 +15,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public class V2BatchTest {
-    public final static ObjectMapper MAPPER = new ObjectMapper().registerModule(new AfterburnerModule());
+
+    public static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new AfterburnerModule());
 
     @Test
     public void testIsEmpty() {
@@ -36,18 +37,18 @@ public class V2BatchTest {
     }
 
     @Test
-    public void TestGetProtocol() {
+    public void testGetProtocol() {
         assertEquals(Protocol.VERSION_2, new V2Batch().getProtocol());
     }
 
     @Test
-    public void TestCompleteReturnTrueWhenIReceiveTheSameAmountOfEvent() {
+    public void testCompleteReturnTrueWhenIReceiveTheSameAmountOfEvent() {
         V2Batch batch = new V2Batch();
         int numberOfEvent = 2;
 
         batch.setBatchSize(numberOfEvent);
 
-        for(int i = 1; i <= numberOfEvent; i++) {
+        for (int i = 1; i <= numberOfEvent; i++) {
             ByteBuf content = messageContents();
             batch.addMessage(i, content, content.readableBytes());
         }
@@ -70,14 +71,14 @@ public class V2BatchTest {
             for (Message message : batch) {
                 assertEquals(message.getSequence(), i++);
             }
-        }finally {
+        } finally {
             batch.release();
         }
     }
 
 
     @Test
-    public void TestCompleteReturnWhenTheNumberOfEventDoesntMatchBatchSize() {
+    public void testCompleteReturnWhenTheNumberOfEventDoesntMatchBatchSize() {
         V2Batch batch = new V2Batch();
         int numberOfEvent = 2;
 
@@ -98,4 +99,5 @@ public class V2BatchTest {
             throw new RuntimeException(e);
         }
     }
+
 }

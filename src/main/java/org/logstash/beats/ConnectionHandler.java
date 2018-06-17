@@ -16,9 +16,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Manages the connection state to the beats client.
  */
 public class ConnectionHandler extends ChannelDuplexHandler {
-    private final static Logger logger = LogManager.getLogger(ConnectionHandler.class);
 
-    public static AttributeKey<AtomicBoolean> CHANNEL_SEND_KEEP_ALIVE = AttributeKey.valueOf("channel-send-keep-alive");
+    private static final Logger logger = LogManager.getLogger(ConnectionHandler.class);
+
+    public static final AttributeKey<AtomicBoolean> CHANNEL_SEND_KEEP_ALIVE = AttributeKey.valueOf("channel-send-keep-alive");
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
@@ -38,7 +39,9 @@ public class ConnectionHandler extends ChannelDuplexHandler {
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         ctx.channel().attr(CHANNEL_SEND_KEEP_ALIVE).get().set(true);
         if (logger.isDebugEnabled()) {
-            logger.debug("{}: batches pending: {}", ctx.channel().id().asShortText(),ctx.channel().attr(CHANNEL_SEND_KEEP_ALIVE).get().get());
+            logger.debug("{}: batches pending: {}",
+                         ctx.channel().id().asShortText(),
+                         ctx.channel().attr(CHANNEL_SEND_KEEP_ALIVE).get().get());
         }
         super.channelRead(ctx, msg);
     }
@@ -79,7 +82,8 @@ public class ConnectionHandler extends ChannelDuplexHandler {
                     }
                 }
             } else if (e.state() == IdleState.ALL_IDLE) {
-                logger.debug("{}: reader and writer are idle, closing remote connection", ctx.channel().id().asShortText());
+                logger.debug("{}: reader and writer are idle, closing remote connection",
+                             ctx.channel().id().asShortText());
                 ctx.flush();
                 ChannelFuture f = ctx.close();
                 if (logger.isTraceEnabled()) {
@@ -105,7 +109,8 @@ public class ConnectionHandler extends ChannelDuplexHandler {
      * @param ctx the {@link ChannelHandlerContext} used to curry the flag.
      * @return  Returns true if this channel/connection has NOT finished processing it's payload. False otherwise.
      */
-     public boolean sendKeepAlive(ChannelHandlerContext ctx) {
+    public boolean sendKeepAlive(ChannelHandlerContext ctx) {
         return  ctx.channel().hasAttr(CHANNEL_SEND_KEEP_ALIVE)  && ctx.channel().attr(CHANNEL_SEND_KEEP_ALIVE).get().get();
     }
+
 }

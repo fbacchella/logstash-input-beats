@@ -11,7 +11,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 
 public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
-    private final static Logger logger = LogManager.getLogger();
+
+    private static final Logger logger = LogManager.getLogger();
     private final IMessageListener messageListener;
     private ChannelHandlerContext context;
 
@@ -22,8 +23,8 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
 
     @Override
     public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-	    context = ctx;
-        if (logger.isTraceEnabled()){
+        context = ctx;
+        if (logger.isTraceEnabled()) {
             logger.trace(format("Channel Active"));
         }
         super.channelActive(ctx);
@@ -33,7 +34,7 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        if (logger.isTraceEnabled()){
+        if (logger.isTraceEnabled()) {
             logger.trace(format("Channel Inactive"));
         }
         messageListener.onConnectionClose(ctx);
@@ -42,7 +43,7 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
 
     @Override
     public void channelRead0(ChannelHandlerContext ctx, Batch batch) throws Exception {
-        if(logger.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             logger.debug(format("Received a new payload"));
         }
         try {
@@ -56,11 +57,13 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
                     ack(ctx, message);
                 }
             }
-        }finally{
+        } finally {
             //this channel is done processing this payload, instruct the connection handler to stop sending TCP keep alive
             ctx.channel().attr(ConnectionHandler.CHANNEL_SEND_KEEP_ALIVE).get().set(false);
             if (logger.isDebugEnabled()) {
-                logger.debug("{}: batches pending: {}", ctx.channel().id().asShortText(),ctx.channel().attr(ConnectionHandler.CHANNEL_SEND_KEEP_ALIVE).get().get());
+                logger.debug("{}: batches pending: {}",
+                             ctx.channel().id().asShortText(),
+                             ctx.channel().attr(ConnectionHandler.CHANNEL_SEND_KEEP_ALIVE).get().get());
             }
             batch.release();
             ctx.flush();
@@ -84,11 +87,11 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
             }
             String causeMessage = cause.getMessage() == null ? cause.getClass().toString() : cause.getMessage();
 
-            if (logger.isDebugEnabled()){
+            if (logger.isDebugEnabled()) {
                 logger.debug(format("Handling exception: " + causeMessage), cause);
             }
             logger.info(format("Handling exception: " + causeMessage));
-        } finally{
+        } finally {
             super.exceptionCaught(ctx, cause);
             ctx.flush();
             ctx.close();
@@ -100,7 +103,7 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
     }
 
     private void ack(ChannelHandlerContext ctx, Message message) {
-        if (logger.isTraceEnabled()){
+        if (logger.isTraceEnabled()) {
             logger.trace(format("Acking message number " + message.getSequence()));
         }
         writeAck(ctx, message.getBatch().getProtocol(), message.getSequence());
@@ -119,19 +122,20 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
         InetSocketAddress remote = (InetSocketAddress) context.channel().remoteAddress();
 
         String localhost;
-        if(local != null) {
+        if (local != null) {
             localhost = local.getAddress().getHostAddress() + ":" + local.getPort();
-        } else{
+        } else {
             localhost = "undefined";
         }
 
         String remotehost;
-        if(remote != null) {
+        if (remote != null) {
             remotehost = remote.getAddress().getHostAddress() + ":" + remote.getPort();
-        } else{
+        } else {
             remotehost = "undefined";
         }
 
         return "[local: " + localhost + ", remote: " + remotehost + "] " + message;
     }
+
 }

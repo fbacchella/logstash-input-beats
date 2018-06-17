@@ -17,6 +17,7 @@ import static org.junit.Assert.assertTrue;
  * Created by ph on 2016-06-01.
  */
 public class BeatsHandlerTest {
+
     private SpyListener spyListener;
     private BeatsHandler beatsHandler;
     private V1Batch batch;
@@ -46,7 +47,9 @@ public class BeatsHandlerTest {
         }
 
         @Override
-        public void onException(ChannelHandlerContext ctx, Throwable cause) { onExceptionCalled = true; }
+        public void onException(ChannelHandlerContext ctx, Throwable cause) {
+            onExceptionCalled = true;
+        }
 
         @Override
         public void onChannelInitializeException(ChannelHandlerContext ctx, Throwable cause) {
@@ -89,7 +92,7 @@ public class BeatsHandlerTest {
     }
 
     @Test
-    public void TestItCalledOnNewConnectionOnListenerWhenHandlerIsAdded() {
+    public void testItCalledOnNewConnectionOnListenerWhenHandlerIsAdded() {
         EmbeddedChannel embeddedChannel = new EmbeddedChannel(new BeatsHandler(spyListener));
         embeddedChannel.writeInbound(batch);
 
@@ -98,7 +101,7 @@ public class BeatsHandlerTest {
     }
 
     @Test
-    public void TestItCalledOnConnectionCloseOnListenerWhenChannelIsRemoved() {
+    public void testItCalledOnConnectionCloseOnListenerWhenChannelIsRemoved() {
         EmbeddedChannel embeddedChannel = new EmbeddedChannel(new BeatsHandler(spyListener));
         embeddedChannel.writeInbound(batch);
         embeddedChannel.close();
@@ -107,7 +110,7 @@ public class BeatsHandlerTest {
     }
 
     @Test
-    public void TestIsCallingNewMessageOnEveryMessage() {
+    public void testIsCallingNewMessageOnEveryMessage() {
         EmbeddedChannel embeddedChannel = new EmbeddedChannel(new BeatsHandler(spyListener));
         embeddedChannel.writeInbound(batch);
 
@@ -117,7 +120,7 @@ public class BeatsHandlerTest {
     }
 
     @Test
-    public void TestItAckLastMessageFromBatch() {
+    public void testItAckLastMessageFromBatch() {
         EmbeddedChannel embeddedChannel = new EmbeddedChannel(new BeatsHandler(spyListener));
         embeddedChannel.writeInbound(batch);
 

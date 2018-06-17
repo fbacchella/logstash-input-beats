@@ -10,13 +10,14 @@ import java.io.InputStream;
 import java.util.Map;
 
 public class Message implements Comparable<Message> {
+
     private final int sequence;
     private String identityStream;
     private Map data;
     private Batch batch;
     private ByteBuf buffer;
 
-    public final static ObjectMapper MAPPER = new ObjectMapper().registerModule(new AfterburnerModule());
+    public static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new AfterburnerModule());
 
     /**
      * Create a message using a map of key, value pairs
@@ -34,7 +35,7 @@ public class Message implements Comparable<Message> {
      * @param sequence sequence number of the message
      * @param buffer {@link ByteBuf} buffer containing Json object
      */
-    public Message(int sequence, ByteBuf buffer){
+    public Message(int sequence, ByteBuf buffer) {
         this.sequence = sequence;
         this.buffer = buffer;
     }
@@ -52,12 +53,12 @@ public class Message implements Comparable<Message> {
      * Note that this method is lazy if the Message was created using a {@link ByteBuf}
      * @return {@link Map} Map of key/value pairs
      */
-    public Map getData(){
-        if (data == null && buffer != null){
-            try (ByteBufInputStream byteBufInputStream = new ByteBufInputStream(buffer)){
-                data = MAPPER.readValue((InputStream)byteBufInputStream, Map.class);
+    public Map getData() {
+        if (data == null && buffer != null) {
+            try (ByteBufInputStream byteBufInputStream = new ByteBufInputStream(buffer)) {
+                data = MAPPER.readValue((InputStream) byteBufInputStream, Map.class);
                 buffer = null;
-            } catch (IOException e){
+            } catch (IOException e) {
                 throw new RuntimeException("Unable to parse beats payload ", e);
             }
         }
@@ -69,30 +70,30 @@ public class Message implements Comparable<Message> {
         return Integer.compare(getSequence(), o.getSequence());
     }
 
-    public Batch getBatch(){
+    public Batch getBatch() {
         return batch;
     }
 
-    public void setBatch(Batch batch){
+    public void setBatch(Batch batch) {
         this.batch = batch;
     }
 
 
     public String getIdentityStream() {
-        if (identityStream == null){
+        if (identityStream == null) {
             identityStream = extractIdentityStream();
         }
         return identityStream;
     }
 
     private String extractIdentityStream() {
-        Map beatsData = (Map<String, String>)this.getData().get("beat");
+        Map beatsData = (Map<String, String>) getData().get("beat");
 
-        if(beatsData != null) {
+        if (beatsData != null) {
             String id = (String) beatsData.get("id");
             String resourceId = (String) beatsData.get("resource_id");
 
-            if(id != null && resourceId != null) {
+            if (id != null && resourceId != null) {
                 return id + "-" + resourceId;
             } else {
                 return beatsData.get("name") + "-" + beatsData.get("source");
@@ -101,4 +102,5 @@ public class Message implements Comparable<Message> {
 
         return null;
     }
+
 }

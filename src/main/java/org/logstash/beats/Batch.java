@@ -3,7 +3,8 @@ package org.logstash.beats;
 /**
  * Interface representing a Batch of {@link Message}.
  */
-public interface Batch extends Iterable<Message>{
+public interface Batch extends Iterable<Message> {
+
     /**
      * Returns the protocol of the sent messages that this batch was constructed from
      * @return byte - either '1' or '2'
@@ -45,4 +46,5 @@ public interface Batch extends Iterable<Message>{
      * after use.
      */
     void release();
+
 }

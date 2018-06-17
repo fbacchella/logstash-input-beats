@@ -18,7 +18,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 
 public class Server {
-    private final static Logger logger = LogManager.getLogger(Server.class);
+
+    private static final Logger logger = LogManager.getLogger(Server.class);
 
     private final int port;
     private final String host;
@@ -54,13 +55,16 @@ public class Server {
         try {
             logger.info("Starting server on port: {}", this.port);
 
-            beatsInitializer = new BeatsInitializer(isSslEnable(), messageListener, clientInactivityTimeoutSeconds, beatsHeandlerThreadCount);
+            beatsInitializer = new BeatsInitializer(isSslEnable(),
+                                                    messageListener, clientInactivityTimeoutSeconds,
+                                                    beatsHeandlerThreadCount);
 
             ServerBootstrap server = new ServerBootstrap();
             server.group(workGroup)
-                    .channel(NioServerSocketChannel.class)
-                    .childOption(ChannelOption.SO_LINGER, 0) // Since the protocol doesn't support yet a remote close from the server and we don't want to have 'unclosed' socket lying around we have to use `SO_LINGER` to force the close of the socket.
-                    .childHandler(beatsInitializer);
+            .channel(NioServerSocketChannel.class)
+            // Since the protocol doesn't support yet a remote close from the server and we don't want to have 'unclosed' socket lying around we have to use `SO_LINGER` to force the close of the socket.
+            .childOption(ChannelOption.SO_LINGER, 0)
+            .childHandler(beatsInitializer);
 
             Channel channel = server.bind(host, port).sync().channel();
             channel.closeFuture().sync();
@@ -77,7 +81,7 @@ public class Server {
         logger.debug("Server stopped");
     }
 
-    private void shutdown(){
+    private void shutdown() {
         try {
             if (workGroup != null) {
                 workGroup.shutdownGracefully().sync();
@@ -85,7 +89,7 @@ public class Server {
             if (beatsInitializer != null) {
                 beatsInitializer.shutdownEventExecutor();
             }
-        } catch (InterruptedException e){
+        } catch (InterruptedException e) {
             throw new IllegalStateException(e);
         }
     }
@@ -115,7 +119,7 @@ public class Server {
 
         private boolean enableSSL = false;
 
-        public BeatsInitializer(Boolean secure, IMessageListener messageListener, int clientInactivityTimeoutSeconds, int beatsHandlerThread) {
+        BeatsInitializer(Boolean secure, IMessageListener messageListener, int clientInactivityTimeoutSeconds, int beatsHandlerThread) {
             enableSSL = secure;
             this.message = messageListener;
             this.clientInactivityTimeoutSeconds = clientInactivityTimeoutSeconds;
@@ -127,11 +131,12 @@ public class Server {
         public void initChannel(SocketChannel socket) throws IOException, NoSuchAlgorithmException, CertificateException {
             ChannelPipeline pipeline = socket.pipeline();
 
-            if(enableSSL) {
+            if (enableSSL) {
                 SslHandler sslHandler = sslBuilder.build(socket.alloc());
                 pipeline.addLast(SSL_HANDLER, sslHandler);
             }
-            pipeline.addLast(idleExecutorGroup, IDLESTATE_HANDLER, new IdleStateHandler(clientInactivityTimeoutSeconds, IDLESTATE_WRITER_IDLE_TIME_SECONDS , clientInactivityTimeoutSeconds));
+            pipeline.addLast(idleExecutorGroup, IDLESTATE_HANDLER,
+                             new IdleStateHandler(clientInactivityTimeoutSeconds, IDLESTATE_WRITER_IDLE_TIME_SECONDS, clientInactivityTimeoutSeconds));
             pipeline.addLast(BEATS_ACKER, new AckEncoder());
             pipeline.addLast(CONNECTION_HANDLER, new ConnectionHandler());
             pipeline.addLast(beatsHandlerExecutorGroup, new BeatsParser(), new BeatsHandler(this.message));
@@ -156,4 +161,5 @@ public class Server {
             }
         }
     }
+
 }

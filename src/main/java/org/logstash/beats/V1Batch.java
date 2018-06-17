@@ -8,7 +8,7 @@ import java.util.List;
  * Implementation of {@link Batch} intended for batches constructed from v1 protocol
  *
  */
-public class V1Batch implements Batch{
+public class V1Batch implements Batch {
 
     private int batchSize;
     private List<Message> messages = new ArrayList<>();
@@ -19,7 +19,7 @@ public class V1Batch implements Batch{
         return protocol;
     }
 
-    public void setProtocol(byte protocol){
+    public void setProtocol(byte protocol) {
         this.protocol = protocol;
     }
 
@@ -27,13 +27,13 @@ public class V1Batch implements Batch{
      * Add Message to the batch
      * @param message Message to add to the batch
      */
-    void addMessage(Message message){
+    void addMessage(Message message) {
         message.setBatch(this);
         messages.add(message);
     }
 
     @Override
-    public Iterator<Message> iterator(){
+    public Iterator<Message> iterator() {
         return messages.iterator();
     }
 
@@ -43,7 +43,7 @@ public class V1Batch implements Batch{
     }
 
     @Override
-    public void setBatchSize(int batchSize){
+    public void setBatchSize(int batchSize) {
         this.batchSize = batchSize;
     }
 
@@ -66,4 +66,5 @@ public class V1Batch implements Batch{
     public void release() {
         //no-op
     }
+
 }

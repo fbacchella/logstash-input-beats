@@ -23,21 +23,21 @@ import static org.junit.Assert.assertNotNull;
 
 
 public class BeatsParserTest {
+
     private V1Batch v1Batch;
     private V2Batch byteBufBatch;
-    public final static ObjectMapper MAPPER = new ObjectMapper().registerModule(new AfterburnerModule());
+    public static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new AfterburnerModule());
 
     private final int numberOfMessage = 20;
 
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
-
     @Before
     public void setup() throws Exception{
         this.v1Batch = new V1Batch();
 
-        for(int i = 1; i <= numberOfMessage; i++) {
+        for (int i = 1; i <= numberOfMessage; i++) {
             Map map = new HashMap<String, String>();
             map.put("line", "Another world");
             map.put("from", "Little big Adventure");
@@ -48,7 +48,7 @@ public class BeatsParserTest {
 
         this.byteBufBatch = new V2Batch();
 
-        for(int i = 1; i <= numberOfMessage; i++) {
+        for (int i = 1; i <= numberOfMessage; i++) {
             Map map = new HashMap<String, String>();
             map.put("line", "Another world");
             map.put("from", "Little big Adventure");
@@ -82,7 +82,7 @@ public class BeatsParserTest {
 
 
         // Generate Data with Keys and String with UTF-8
-        for(int i = 0; i < numberOfMessage; i++) {
+        for (int i = 0; i < numberOfMessage; i++) {
             ByteBuf payload = Unpooled.buffer();
 
             Map map = new HashMap<String, String>();
@@ -104,7 +104,7 @@ public class BeatsParserTest {
         V1Batch batch = new V1Batch();
 
         // Generate Data with Keys and String with UTF-8
-        for(int i = 0; i < numberOfMessage; i++) {
+        for (int i = 0; i < numberOfMessage; i++) {
 
             Map map = new HashMap<String, String>();
             map.put("étoile", "mystère");
@@ -217,7 +217,7 @@ public class BeatsParserTest {
 
         int i = 0;
         Iterator<Message> expectedMessages = expected.iterator();
-        for(Message actualMessage: actual) {
+        for (Message actualMessage: actual) {
             Message expectedMessage = expectedMessages.next();
             assertEquals(expectedMessage.getSequence(), actualMessage.getSequence());
 
@@ -226,7 +226,7 @@ public class BeatsParserTest {
 
             assertEquals(expectedData.size(), actualData.size());
 
-            for(Object entry : expectedData.entrySet()) {
+            for (Object entry : expectedData.entrySet()) {
                 Map.Entry e = (Map.Entry) entry;
                 String key = (String) e.getKey();
                 String value = (String) e.getValue();
@@ -253,4 +253,5 @@ public class BeatsParserTest {
 
         return (Batch) channel.readInbound();
     }
+
 }

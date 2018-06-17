@@ -29,12 +29,11 @@ import io.netty.handler.ssl.SslHandler;
  */
 public class SslSimpleBuilder {
 
-
-    public static enum SslClientVerifyMode {
+    public enum SslClientVerifyMode {
         VERIFY_PEER,
         FORCE_PEER,
     }
-    private final static Logger logger = LogManager.getLogger(SslSimpleBuilder.class);
+    private static final Logger logger = LogManager.getLogger(SslSimpleBuilder.class);
 
 
     private File sslKeyFile;
@@ -47,20 +46,20 @@ public class SslSimpleBuilder {
     Mordern Ciphers List from
     https://wiki.mozilla.org/Security/Server_Side_TLS
     This list require the OpenSSl engine for netty.
-    */
-    public final static String[] DEFAULT_CIPHERS = new String[] {
-            "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-            "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
-            "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
-            "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
-            "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"
+     */
+    public static final String[] DEFAULT_CIPHERS = new String[] {
+                                                                 "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+                                                                 "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                                                                 "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+                                                                 "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                                                                 "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+                                                                 "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+                                                                 "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+                                                                 "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"
     };
 
     private String[] ciphers = DEFAULT_CIPHERS;
-    private String[] protocols = new String[] { "TLSv1.2" };
+    private String[] protocols = new String[] {"TLSv1.2"};
     private String[] certificateAuthorities;
     private String passPhrase;
 
@@ -77,8 +76,8 @@ public class SslSimpleBuilder {
     }
 
     public SslSimpleBuilder setCipherSuites(String[] ciphersSuite) throws IllegalArgumentException {
-        for(String cipher : ciphersSuite) {
-            if(!OpenSsl.isCipherSuiteAvailable(cipher)) {
+        for (String cipher : ciphersSuite) {
+            if (!OpenSsl.isCipherSuiteAvailable(cipher)) {
                 throw new IllegalArgumentException("Cipher `" + cipher + "` is not available");
             } else {
                 logger.debug("Cipher is supported: " + cipher);
@@ -115,16 +114,18 @@ public class SslSimpleBuilder {
     public SslHandler build(ByteBufAllocator bufferAllocator) throws IOException, NoSuchAlgorithmException, CertificateException {
         SslContextBuilder builder = SslContextBuilder.forServer(sslCertificateFile, sslKeyFile, passPhrase);
 
-        if(logger.isDebugEnabled())
+        if (logger.isDebugEnabled()) {
             logger.debug("Available ciphers:" + Arrays.toString(OpenSsl.availableOpenSslCipherSuites().toArray()));
             logger.debug("Ciphers:  " + Arrays.toString(ciphers));
+        }
 
 
         builder.ciphers(Arrays.asList(ciphers));
 
-        if(requireClientAuth()) {
-            if (logger.isDebugEnabled())
+        if (requireClientAuth()) {
+            if (logger.isDebugEnabled()) {
                 logger.debug("Certificate Authorities: " + Arrays.toString(certificateAuthorities));
+            }
 
             builder.trustManager(loadCertificateCollection(certificateAuthorities));
         }
@@ -132,21 +133,21 @@ public class SslSimpleBuilder {
         SslContext context = builder.build();
         SslHandler sslHandler = context.newHandler(bufferAllocator);
 
-        if(logger.isDebugEnabled())
+        if (logger.isDebugEnabled()) {
             logger.debug("TLS: " + Arrays.toString(protocols));
+        }
 
         SSLEngine engine = sslHandler.engine();
         engine.setEnabledProtocols(protocols);
 
-
-        if(requireClientAuth()) {
+        if (requireClientAuth()) {
             // server is doing the handshake
             engine.setUseClientMode(false);
 
-            if(verifyMode == SslClientVerifyMode.FORCE_PEER) {
+            if (verifyMode == SslClientVerifyMode.FORCE_PEER) {
                 // Explicitely require a client certificate
                 engine.setNeedClientAuth(true);
-            } else if(verifyMode == SslClientVerifyMode.VERIFY_PEER) {
+            } else if (verifyMode == SslClientVerifyMode.VERIFY_PEER) {
                 // If the client supply a client certificate we will verify it.
                 engine.setWantClientAuth(true);
             }
@@ -163,12 +164,12 @@ public class SslSimpleBuilder {
 
         List<X509Certificate> collections = new ArrayList<X509Certificate>();
 
-        for(int i = 0; i < certificates.length; i++) {
+        for (int i = 0; i < certificates.length; i++) {
             String certificate = certificates[i];
 
             logger.debug("Loading certificates from file " + certificate);
 
-            try(InputStream in = new FileInputStream(certificate)) {
+            try (InputStream in = new FileInputStream(certificate)) {
                 List<X509Certificate> certificatesChains = (List<X509Certificate>) certificateFactory.generateCertificates(in);
                 collections.addAll(certificatesChains);
             }
@@ -177,15 +178,11 @@ public class SslSimpleBuilder {
     }
 
     private boolean requireClientAuth() {
-        if(certificateAuthorities != null) {
+        if (certificateAuthorities != null) {
             return true;
         }
 
         return false;
-    }
-
-    private FileInputStream createFileInputStream(String filepath) throws FileNotFoundException {
-        return new FileInputStream(filepath);
     }
 
     /**
