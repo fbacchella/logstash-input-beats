@@ -9,7 +9,7 @@ addons:
   sonarcloud:
     organization: "fbacchella-github"
     token:
-      secure: "XWJ0wVivuMHEgvTPvKaXhC5u7+SZfT/XYDC/YkksoFKQmGn7TO2HuwJq9DK7WOXrI5lJC/VKppcLJqwVVh4t7Sk+lz4VJm1vh1dzYwYRIDPguyTRArmw5XHe58QxFvKGTvtO/1BR7/hYYug+n6I3vU8h8M/El+f7inKwzJZYBqg="
+      secure: "khfGe3kWtJEHMbejx65DuEy1cZ1O8TBnPoxJ3taQYSkWrJcgH1/KfwMnDWU8O3/1P2Ar+MerBGQL4LlBRoJH3of2o7IscvGpFMv6EeF9mfUJQhtUNhH1zQ5Y/sMjX9hUBGjUVr36QCSp1TwgPvRFks7+EG62pvUm9w1rG2Eb8cSg9SWLcCxgISwGlduYypXZpXbBQV0TPwYlP6/sADmC2y20payQzpi9UKRdvY2f6j8Yim+Y2kdke+wJk0IuvDXs80iz8VWix4n0mDiCrIcpS7C8OuiSamTa/0kqtS0s5KTu5Rf9zb0gl74GTbxpbupDJFaBW1u4KzY8MfSKcLixI8XRfqZATAIdDiwAL84E+CauR8WK3+7z5sSY1ajOvDki64N73IhlelHZZ14Rgq4B/2x7axatEFV/LFFrTTnjHm6/euGo3pyW86PNZSnf4niuVf2FpGqOuB4QyHNanCPaCpgS/rV/dDbRiMItehDoJcBwrn/yhL5MB359Wo1L2UMTFB+KuKmQ93FkPApnKkQyHUkzTv6wRV8wdBzFtfdOYIbYjORM/mwQjKfsmb16geJHLqJ8DEG8EvexCAehbvHMjRVZW4FWT9QP65OTCmw7eW0jskrxZB1z2+YjSY/i+Gfb5l4x67+6F7ab/92ZI4QfbXp+RpYsdeaJW/24jXEANlM="
 script:
   - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar
 jdk:
