@@ -1,18 +1,17 @@
----
 sudo: false
-language: ruby
-cache: bundler
-matrix:
-  include:
-  - rvm: jruby-9.1.13.0
-    env: LOGSTASH_BRANCH=master
-  - rvm: jruby-9.1.13.0
-    env: LOGSTASH_BRANCH=6.x
-  - rvm: jruby-9.1.13.0
-    env: LOGSTASH_BRANCH=6.0
-  - rvm: jruby-1.7.27
-    env: LOGSTASH_BRANCH=5.6
-  fast_finish: true
 install: true
-script: ci/build.sh
-jdk: oraclejdk8
+addons:
+  sonarcloud:
+    organization: "fbacchella-github"
+    token:
+      secure: "XWJ0wVivuMHEgvTPvKaXhC5u7+SZfT/XYDC/YkksoFKQmGn7TO2HuwJq9DK7WOXrI5lJC/VKppcLJqwVVh4t7Sk+lz4VJm1vh1dzYwYRIDPguyTRArmw5XHe58QxFvKGTvtO/1BR7/hYYug+n6I3vU8h8M/El+f7inKwzJZYBqg="
+script:
+  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar
+jdk:
+  - oraclejdk8
+  - oraclejdk9
+  - oraclejdk10
+cache:
+  directories:
+    - '$HOME/.m2/repository'
+    - '$HOME/.sonar/cache'
