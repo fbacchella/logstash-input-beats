@@ -3,7 +3,7 @@ sudo: false
 install: true
 branches:
   only:
-  - master
+  - release
   - netty_only
 jdk:
   - oraclejdk10
