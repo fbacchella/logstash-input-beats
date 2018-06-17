@@ -4,7 +4,7 @@
 
     <groupId>LogHub</groupId>
     <artifactId>netty-beats</artifactId>
-    <version>5.0.16-rc1</version>
+    <version>5.0.17-rc1</version>
     <packaging>jar</packaging>
 
     <properties>
