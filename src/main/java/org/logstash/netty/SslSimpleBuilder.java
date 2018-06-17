@@ -48,15 +48,15 @@ public class SslSimpleBuilder {
     https://wiki.mozilla.org/Security/Server_Side_TLS
     This list require the OpenSSl engine for netty.
      */
-    public static final String[] DEFAULT_CIPHERS = new String[] {
-                                                                 "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
-                                                                 "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
-                                                                 "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
-                                                                 "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
-                                                                 "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
-                                                                 "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
-                                                                 "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
-                                                                 "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"
+    private static final String[] DEFAULT_CIPHERS = new String[] {
+                                                                  "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+                                                                  "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384",
+                                                                  "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+                                                                  "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+                                                                  "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384",
+                                                                  "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384",
+                                                                  "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256",
+                                                                  "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256"
     };
 
     private String[] ciphers = DEFAULT_CIPHERS;
@@ -158,7 +158,7 @@ public class SslSimpleBuilder {
         logger.debug("Load certificates collection");
         CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
 
-        List<X509Certificate> collections = new ArrayList<X509Certificate>();
+        List<X509Certificate> collections = new ArrayList<>();
 
         for (int i = 0; i < certificates.length; i++) {
             String certificate = certificates[i];
@@ -175,11 +175,7 @@ public class SslSimpleBuilder {
     }
 
     private boolean requireClientAuth() {
-        if (certificateAuthorities != null) {
-            return true;
-        }
-
-        return false;
+        return certificateAuthorities != null;
     }
 
     /**

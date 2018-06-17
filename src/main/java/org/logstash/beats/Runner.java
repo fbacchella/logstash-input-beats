@@ -14,9 +14,6 @@ public class Runner {
     public static void main(String[] args) throws Exception {
         logger.info("Starting Beats Bulk");
 
-        // Check for leaks.
-        // ResourceLeakDetector.setLevel(ResourceLeakDetector.Level.PARANOID);
-
         Server server = new Server("0.0.0.0", DEFAULT_PORT, 15, Runtime.getRuntime().availableProcessors());
 
         if (args.length > 0 && args[0].equals("ssl")) {

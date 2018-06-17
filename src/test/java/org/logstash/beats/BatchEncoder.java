@@ -11,7 +11,6 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.util.Map;
 
-
 /**
  *  This Class is mostly used in the test suite to make the right assertions with the encoded data frame.
  *  This class support creating v1 or v2 lumberjack frames.

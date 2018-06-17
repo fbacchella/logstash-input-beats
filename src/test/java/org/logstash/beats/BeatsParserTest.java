@@ -82,7 +82,7 @@ public class BeatsParserTest {
 
 
         // Generate Data with Keys and String with UTF-8
-        for (int i = 0; i < numberOfMessage; i++) {
+        for (int i = 0; i < numberOfMessage + 1; i++) {
             ByteBuf payload = Unpooled.buffer();
 
             Map<String, String> map = new HashMap<>();

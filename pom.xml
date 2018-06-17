@@ -272,7 +272,7 @@
         </plugins>
     </reporting>
 
-    <name>LogHub</name>
+    <name>netty-beats</name>
     <url>https://github.com/fbacchella/LogHub/wiki</url>
     <inceptionYear>2014</inceptionYear>
     <licenses>

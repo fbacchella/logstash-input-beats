@@ -1,9 +1,9 @@
 package org.logstash.beats;
 
+import java.util.Iterator;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
-
-import java.util.Iterator;
 
 /**
  * Implementation of {@link Batch} for the v2 protocol backed by ByteBuf. *must* be released after use.
@@ -28,6 +28,7 @@ public class V2Batch implements Batch {
     }
 
     public Iterator<Message> iterator() {
+        // Locks like to be broken, not sure about real hasNext usefulness
         internalBuffer.resetReaderIndex();
         return new Iterator<Message>() {
             @Override

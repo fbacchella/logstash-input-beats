@@ -83,7 +83,7 @@ public class ConnectionHandler extends ChannelDuplexHandler {
                 ctx.flush();
                 ChannelFuture f = ctx.close();
                 if (logger.isTraceEnabled()) {
-                    f.addListener((future) -> {
+                    f.addListener(future -> {
                         if (future.isSuccess()) {
                             logger.trace("closed ctx successfully");
                         } else {

@@ -90,6 +90,7 @@ public class Server {
                 beatsInitializer.shutdownEventExecutor();
             }
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new IllegalStateException(e);
         }
     }
@@ -103,14 +104,14 @@ public class Server {
     }
 
     private class BeatsInitializer extends ChannelInitializer<SocketChannel> {
-        private final String SSL_HANDLER = "ssl-handler";
-        private final String IDLESTATE_HANDLER = "idlestate-handler";
-        private final String CONNECTION_HANDLER = "connection-handler";
-        private final String BEATS_ACKER = "beats-acker";
+        private static final String SSL_HANDLER = "ssl-handler";
+        private static final String IDLESTATE_HANDLER = "idlestate-handler";
+        private static final String CONNECTION_HANDLER = "connection-handler";
+        private static final String BEATS_ACKER = "beats-acker";
 
 
-        private final int DEFAULT_IDLESTATEHANDLER_THREAD = 4;
-        private final int IDLESTATE_WRITER_IDLE_TIME_SECONDS = 5;
+        private static final int DEFAULT_IDLESTATEHANDLER_THREAD = 4;
+        private static final int IDLESTATE_WRITER_IDLE_TIME_SECONDS = 5;
 
         private final EventExecutorGroup idleExecutorGroup;
         private final EventExecutorGroup beatsHandlerExecutorGroup;
@@ -157,6 +158,7 @@ public class Server {
                 idleExecutorGroup.shutdownGracefully().sync();
                 beatsHandlerExecutorGroup.shutdownGracefully().sync();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
                 throw new IllegalStateException(e);
             }
         }

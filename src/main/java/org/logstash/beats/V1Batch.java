@@ -54,7 +54,7 @@ public class V1Batch implements Batch {
 
     @Override
     public boolean isEmpty() {
-        return 0 == messages.size();
+        return messages.isEmpty();
     }
 
     @Override

@@ -7,6 +7,7 @@ import io.netty.buffer.ByteBufInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.Map;
 
 public class Message implements Comparable<Message> {
@@ -59,7 +60,7 @@ public class Message implements Comparable<Message> {
                 data = MAPPER.readValue((InputStream) byteBufInputStream, Map.class);
                 buffer = null;
             } catch (IOException e) {
-                throw new RuntimeException("Unable to parse beats payload ", e);
+                throw new UncheckedIOException("Unable to parse beats payload ", e);
             }
         }
         return data;
@@ -91,8 +92,8 @@ public class Message implements Comparable<Message> {
         Map<String, String> beatsData = (Map<String, String>) getData().get("beat");
 
         if (beatsData != null) {
-            String id = (String) beatsData.get("id");
-            String resourceId = (String) beatsData.get("resource_id");
+            String id = beatsData.get("id");
+            String resourceId = beatsData.get("resource_id");
 
             if (id != null && resourceId != null) {
                 return id + "-" + resourceId;
