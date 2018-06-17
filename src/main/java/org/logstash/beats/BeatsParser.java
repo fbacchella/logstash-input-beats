@@ -19,7 +19,7 @@ import java.util.zip.InflaterOutputStream;
 
 public class BeatsParser extends ByteToMessageDecoder {
 
-    private static final Logger logger = LogManager.getLogger(BeatsParser.class);
+    private static final Logger logger = LogManager.getLogger();
 
     private Batch batch;
 
@@ -190,9 +190,7 @@ public class BeatsParser extends ByteToMessageDecoder {
             logger.trace("Running: READ_JSON");
             ((V2Batch) batch).addMessage(sequence, in, requiredBytes);
             if (batch.isComplete()) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Sending batch size: " + this.batch.size() + ",windowSize: " + batch.getBatchSize() + " , seq: " + sequence);
-                }
+                logger.trace("{}", () -> "Sending batch size: " + batch.size() + ",windowSize: " + batch.getBatchSize() + " , seq: " + sequence);
                 out.add(batch);
                 batchComplete();
             }
@@ -212,9 +210,7 @@ public class BeatsParser extends ByteToMessageDecoder {
     }
 
     private void transition(States nextState, int requiredBytes) {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Transition, from: " + currentState + ", to: " + nextState + ", requiring " + requiredBytes + " bytes");
-        }
+        logger.trace("{}", () -> "Transition, from: " + currentState + ", to: " + nextState + ", requiring " + requiredBytes + " bytes");
         this.currentState = nextState;
         this.requiredBytes = requiredBytes;
     }

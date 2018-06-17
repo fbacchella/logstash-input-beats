@@ -12,7 +12,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class MessageListener implements IMessageListener {
 
-    private static final Logger logger = LogManager.getLogger(MessageListener.class);
+    private static final Logger logger = LogManager.getLogger();
 
 
     /**

@@ -19,7 +19,7 @@ import java.security.cert.CertificateException;
 
 public class Server {
 
-    private static final Logger logger = LogManager.getLogger(Server.class);
+    private static final Logger logger = LogManager.getLogger();
 
     private final int port;
     private final String host;
@@ -53,7 +53,7 @@ public class Server {
         }
         workGroup = new NioEventLoopGroup();
         try {
-            logger.info("Starting server on port: {}", this.port);
+            logger.info("Starting server on port: {}", port);
 
             beatsInitializer = new BeatsInitializer(isSslEnable(),
                                                     messageListener, clientInactivityTimeoutSeconds,

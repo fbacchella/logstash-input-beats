@@ -9,7 +9,7 @@ public class Runner {
 
     private static final int DEFAULT_PORT = 5044;
 
-    private static final Logger logger = LogManager.getLogger(Runner.class);
+    private static final Logger logger = LogManager.getLogger();
 
     public static void main(String[] args) throws Exception {
         logger.info("Starting Beats Bulk");
