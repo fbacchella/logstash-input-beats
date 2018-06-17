@@ -1,17 +1,15 @@
 sudo: false
 install: true
-addons:
-  sonarcloud:
-    organization: "fbacchella-github"
-    token:
-      secure: "XWJ0wVivuMHEgvTPvKaXhC5u7+SZfT/XYDC/YkksoFKQmGn7TO2HuwJq9DK7WOXrI5lJC/VKppcLJqwVVh4t7Sk+lz4VJm1vh1dzYwYRIDPguyTRArmw5XHe58QxFvKGTvtO/1BR7/hYYug+n6I3vU8h8M/El+f7inKwzJZYBqg="
-script:
-  - mvn clean org.jacoco:jacoco-maven-plugin:prepare-agent package sonar:sonar
 jdk:
-  - oraclejdk8
-  - oraclejdk9
   - oraclejdk10
 cache:
   directories:
     - '$HOME/.m2/repository'
-    - '$HOME/.sonar/cache'
+deploy:
+    provider: bintray
+    file: "target/descriptor.json"
+    user: "fbacchella"
+    skip_cleanup: true
+    on: "release"
+    key:
+        secure: joBFFpOZrd8k6lRKSENJrQsGUPAbD51NblgmILHUIRpOR5IE3E7l7PlHTJjN86NnK41n+PuZ0BusbzzETcKMCbeCmcnwRBSTJrq+JJIiNsYDin1nUEPZLk+A6hBdL8m0feA+nTiwoG7F8BlllQdySVI5YFrpQrPuX+65XdYkOfhee8NuMhT8uqPkmQ2LwvsHN2Plvx/LyxslXZ8zxdb9+8Iaq4NtYHTW5R6dIbhYSV++QeKPd9L1uatN5+0pCyqJxd5Wk/UhmQC0q8oGwa03e461GPsYcmriLsGitmvdUE1gy4nbSsoh15LNTtbo9vE0zzrqXNxr+IizTwtKJHGiyHAPtJWG9wG6Jgtp30BK23S7f1umIi+ZinZxdj/K2ItheO0J0xJIEVzmsUqzcq2A/6lOtC3rzxsAILQpzIWi6jbA/GGZc9ILO9wTYs5Js4UHKLbNZU2s09DD04JSIYjHDJ8BSokNE7pXVqbU12pUjCWBesSRAJEHj0Xp54utvlqSJZwBVuEbx6WF3vbe6eiI9mmKGuP4iZr7zVU5RjOcD9oH840chjyDMqhaNqj8L2e1BgcQMH53f5jLW8IazSaJAe1jwCXT5EtbO1nNLNFpvV+p4gb/k2JOige8/keVRnC5lKSYMHI3wZhG8DB2WcyNTg1WrXDsY5YmACG4oHsIcgQ=

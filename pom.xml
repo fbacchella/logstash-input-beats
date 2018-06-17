@@ -4,7 +4,7 @@
 
     <groupId>LogHub</groupId>
     <artifactId>netty-beats</artifactId>
-    <version>5.0.16</version>
+    <version>5.0.16-rc1</version>
     <packaging>jar</packaging>
 
     <properties>
@@ -105,6 +105,29 @@
                                     <version>[3.0,]</version>
                                 </requireMavenVersion>
                             </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <!--  use to build the descriptor.json used by travis -->
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.0.2</version>
+                <executions>
+                    <execution>
+                        <id>copy-resources</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/target/</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>src/main/build</directory>
+                                    <filtering>true</filtering>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>
