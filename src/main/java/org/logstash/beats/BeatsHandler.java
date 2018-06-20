@@ -82,7 +82,6 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
             logger.info("{}", () -> format("Handling exception: " + causeMessage));
             logger.catching(Level.DEBUG, cause);
         } finally {
-            super.exceptionCaught(ctx, cause);
             ctx.flush();
             ctx.close();
         }
