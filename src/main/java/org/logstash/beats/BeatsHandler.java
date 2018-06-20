@@ -5,6 +5,7 @@ import java.net.SocketAddress;
 
 import javax.net.ssl.SSLHandshakeException;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -78,8 +79,8 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
             }
             String causeMessage = cause.getMessage() == null ? cause.getClass().toString() : cause.getMessage();
 
-            logger.debug("{}", () -> format("Handling exception: " + causeMessage), () -> cause);
             logger.info("{}", () -> format("Handling exception: " + causeMessage));
+            logger.catching(Level.DEBUG, cause);
         } finally {
             super.exceptionCaught(ctx, cause);
             ctx.flush();
