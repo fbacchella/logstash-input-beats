@@ -26,6 +26,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 
@@ -47,11 +48,12 @@ public class ServerTest {
         int inactivityTime = 3; // in seconds
         int concurrentConnections = 10;
 
-        final Random random = new Random();
+        Random random = new Random();
 
-        final CountDownLatch latch = new CountDownLatch(concurrentConnections);
+        CountDownLatch latch = new CountDownLatch(concurrentConnections);
 
-        final Server server = new Server(host, randomPort, inactivityTime, threadCount);
+        Server server = new Server(host, randomPort, inactivityTime, threadCount).setEventLoopGroup(new NioEventLoopGroup()).setChannelClass(NioServerSocketChannel.class);
+
         final AtomicBoolean otherCause = new AtomicBoolean(false);
         server.setMessageListener(new MessageListener() {
             public void onNewConnection(ChannelHandlerContext ctx) {
@@ -111,9 +113,9 @@ public class ServerTest {
         int inactivityTime = 3; // in seconds
         int concurrentConnections = 10;
 
-        final CountDownLatch latch = new CountDownLatch(concurrentConnections);
-        final AtomicBoolean exceptionClose = new AtomicBoolean(false);
-        final Server server = new Server(host, randomPort, inactivityTime, threadCount);
+        CountDownLatch latch = new CountDownLatch(concurrentConnections);
+        AtomicBoolean exceptionClose = new AtomicBoolean(false);
+        Server server = new Server(host, randomPort, inactivityTime, threadCount).setEventLoopGroup(new NioEventLoopGroup()).setChannelClass(NioServerSocketChannel.class);
         server.setMessageListener(new MessageListener() {
             @Override
             public void onNewConnection(ChannelHandlerContext ctx) {
@@ -151,7 +153,6 @@ public class ServerTest {
         try {
             long started = System.currentTimeMillis();
 
-
             for (int i = 0; i < concurrentConnections; i++) {
                 connectClient();
             }
@@ -169,9 +170,8 @@ public class ServerTest {
 
     @Test
     public void testServerShouldAcceptConcurrentConnection() throws InterruptedException {
-        final Server server = new Server(host, randomPort, 30, threadCount);
         SpyListener listener = new SpyListener();
-        server.setMessageListener(listener);
+        Server server = new Server(host, randomPort, 30, threadCount).setMessageListener(listener).setEventLoopGroup(new NioEventLoopGroup()).setChannelClass(NioServerSocketChannel.class);
         Runnable serverTask = new Runnable() {
             @Override
             public void run() {
@@ -220,7 +220,6 @@ public class ServerTest {
             iteration++;
 
             if (iteration >= maxIteration) {
-                System.out.println("reached max iteration" + maxIteration);
                 break;
             }
 
@@ -243,12 +242,9 @@ public class ServerTest {
                 pipeline.addLast(new BatchEncoder());
                 pipeline.addLast(new DummyV2Sender());
             }
-        }
-                        );
+        });
         return b.connect("localhost", randomPort);
     }
-
-
 
     /**
      * A dummy class to send a unique batch to an active server
@@ -273,7 +269,6 @@ public class ServerTest {
             ctx.close();
         }
     }
-
 
     /**
      *  Used to assert the number of messages send to the server
