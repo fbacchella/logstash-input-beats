@@ -210,7 +210,8 @@
         </plugins>
     </reporting>
 
-    <name>netty-beats</name>
+    <name>${project.groupId}:${project.artifactId}</name>
+    <description>Beats/Lumberjack Netty implementation. Forked from https://github.com/logstash-plugins/logstash-input-beats to keep only the netty parts.</description>
     <url>https://github.com/fbacchella/netty-beats</url>
     <inceptionYear>2018</inceptionYear>
     <licenses>
@@ -220,6 +221,14 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+    <developers>
+        <developer>
+            <name>Fabrice Bacchella</name>
+            <email>fabrice.bacchella@orange.fr</email>
+            <id>fbacchella</id>
+            <url>https://github.com/fbacchella</url>
+        </developer>
+    </developers>
 
     <ciManagement>
         <system>Travis CI</system>
@@ -231,8 +240,7 @@
     </issueManagement>
     <scm>
         <url>https://github.com/fbacchella/netty-beats.git</url>
-        <connection>scm:git:https://github.com/fbacchella/netty-beats.git</connection>
-        <developerConnection>scm:git:https://github.com/fbacchella/netty-beats.git</developerConnection>
+        <connection>scm:git:git://github.com/fbacchella/netty-beats.git</connection>
+        <developerConnection>scm:git:ssh://github.com/fbacchella/netty-beats.git</developerConnection>
     </scm>
-    <description>Beats/Lumberjack Netty implementation. Forked from https://github.com/logstash-plugins/logstash-input-beats to keep only the netty parts.</description>
 </project>
