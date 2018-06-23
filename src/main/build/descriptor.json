@@ -22,7 +22,7 @@
     {
       "includePattern": "target/deploy/(fr/loghub/netty-beats/${project.version}/.*)",
       "uploadPattern": "$1"
-    },
+    }
   ],
   "publish": true
 }
