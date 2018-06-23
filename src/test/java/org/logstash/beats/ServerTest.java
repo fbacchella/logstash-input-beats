@@ -5,9 +5,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.number.IsCloseTo.closeTo;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,6 +27,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 
@@ -38,7 +40,7 @@ public class ServerTest {
 
     @Before
     public void setUp() {
-        randomPort = ThreadLocalRandom.current().nextInt(1024, 65535);
+        randomPort = tryGetPort();
         group = new NioEventLoopGroup();
     }
 
@@ -47,11 +49,18 @@ public class ServerTest {
         int inactivityTime = 3; // in seconds
         int concurrentConnections = 10;
 
-        final Random random = new Random();
+        Random random = new Random();
 
-        final CountDownLatch latch = new CountDownLatch(concurrentConnections);
+        CountDownLatch latch = new CountDownLatch(concurrentConnections);
 
-        final Server server = new Server(host, randomPort, inactivityTime, threadCount);
+        Server server = new Server()
+                        .setHost(host)
+                        .setPort(randomPort)
+                        .setClientInactivityTimeout(inactivityTime)
+                        .setBeatsHeandlerThreadCount(threadCount)
+                        .setEventLoopGroupClass(NioEventLoopGroup.class)
+                        .setChannelClass(NioServerSocketChannel.class);
+
         final AtomicBoolean otherCause = new AtomicBoolean(false);
         server.setMessageListener(new MessageListener() {
             public void onNewConnection(ChannelHandlerContext ctx) {
@@ -111,9 +120,15 @@ public class ServerTest {
         int inactivityTime = 3; // in seconds
         int concurrentConnections = 10;
 
-        final CountDownLatch latch = new CountDownLatch(concurrentConnections);
-        final AtomicBoolean exceptionClose = new AtomicBoolean(false);
-        final Server server = new Server(host, randomPort, inactivityTime, threadCount);
+        CountDownLatch latch = new CountDownLatch(concurrentConnections);
+        AtomicBoolean exceptionClose = new AtomicBoolean(false);
+        Server server = new Server()
+                        .setHost(host)
+                        .setPort(randomPort)
+                        .setClientInactivityTimeout(inactivityTime)
+                        .setBeatsHeandlerThreadCount(threadCount)
+                        .setEventLoopGroupClass(NioEventLoopGroup.class)
+                        .setChannelClass(NioServerSocketChannel.class);
         server.setMessageListener(new MessageListener() {
             @Override
             public void onNewConnection(ChannelHandlerContext ctx) {
@@ -151,7 +166,6 @@ public class ServerTest {
         try {
             long started = System.currentTimeMillis();
 
-
             for (int i = 0; i < concurrentConnections; i++) {
                 connectClient();
             }
@@ -167,11 +181,17 @@ public class ServerTest {
         }
     }
 
-    @Test
+    @Test(timeout=30000)
     public void testServerShouldAcceptConcurrentConnection() throws InterruptedException {
-        final Server server = new Server(host, randomPort, 30, threadCount);
         SpyListener listener = new SpyListener();
-        server.setMessageListener(listener);
+        Server server = new Server()
+                        .setHost(host)
+                        .setPort(randomPort)
+                        .setMessageListener(listener)
+                        .setClientInactivityTimeout(30)
+                        .setBeatsHeandlerThreadCount(threadCount)
+                        .setEventLoopGroupClass(NioEventLoopGroup.class)
+                        .setChannelClass(NioServerSocketChannel.class);
         Runnable serverTask = new Runnable() {
             @Override
             public void run() {
@@ -214,13 +234,11 @@ public class ServerTest {
         int iteration = 0;
         int maxIteration = 30;
 
-
         while (listener.getReceivedCount() < ConcurrentConnections) {
             Thread.sleep(1000);
             iteration++;
 
             if (iteration >= maxIteration) {
-                System.out.println("reached max iteration" + maxIteration);
                 break;
             }
 
@@ -243,12 +261,9 @@ public class ServerTest {
                 pipeline.addLast(new BatchEncoder());
                 pipeline.addLast(new DummyV2Sender());
             }
-        }
-                        );
+        });
         return b.connect("localhost", randomPort);
     }
-
-
 
     /**
      * A dummy class to send a unique batch to an active server
@@ -274,7 +289,6 @@ public class ServerTest {
         }
     }
 
-
     /**
      *  Used to assert the number of messages send to the server
      */
@@ -292,6 +306,29 @@ public class ServerTest {
 
         public int getReceivedCount() {
             return receivedCount.get();
+        }
+    }
+
+    /**
+     * Try to find a random available port
+     * @return an available listen port
+     */
+    private static int tryGetPort() {
+        ServerSocket ss = null;
+        try {
+            ss = new ServerSocket(0);
+            ss.setReuseAddress(true);
+            return ss.getLocalPort();
+        } catch (IOException e) {
+            return -1;
+        } finally {
+            if (ss != null) {
+                try {
+                    ss.close();
+                } catch (IOException e) {
+                    /* should not be thrown */
+                }
+            }
         }
     }
 

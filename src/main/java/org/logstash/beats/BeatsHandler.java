@@ -1,9 +1,11 @@
 package org.logstash.beats;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import javax.net.ssl.SSLHandshakeException;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -77,10 +79,9 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
             }
             String causeMessage = cause.getMessage() == null ? cause.getClass().toString() : cause.getMessage();
 
-            logger.debug("{}", () -> format("Handling exception: " + causeMessage), () -> cause);
             logger.info("{}", () -> format("Handling exception: " + causeMessage));
+            logger.catching(Level.DEBUG, cause);
         } finally {
-            super.exceptionCaught(ctx, cause);
             ctx.flush();
             ctx.close();
         }
@@ -104,19 +105,21 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
      * we will use similar logic than Netty's LoggingHandler
      */
     private String format(String message) {
-        InetSocketAddress local = (InetSocketAddress) context.channel().localAddress();
-        InetSocketAddress remote = (InetSocketAddress) context.channel().remoteAddress();
+        SocketAddress local = context.channel().localAddress();
+        SocketAddress remote = context.channel().remoteAddress();
 
-        String localhost;
-        if (local != null) {
-            localhost = local.getAddress().getHostAddress() + ":" + local.getPort();
+        String localhost ;
+        if (local != null && local instanceof InetSocketAddress) {
+            InetSocketAddress inetlocal = (InetSocketAddress)local;
+            localhost = inetlocal.getAddress().getHostAddress() + ":" + inetlocal.getPort();
         } else {
             localhost = "undefined";
         }
 
         String remotehost;
-        if (remote != null) {
-            remotehost = remote.getAddress().getHostAddress() + ":" + remote.getPort();
+        if (remote != null && remote instanceof InetSocketAddress) {
+            InetSocketAddress inetremote = (InetSocketAddress)local;
+            remotehost = inetremote.getAddress().getHostAddress() + ":" + inetremote.getPort();
         } else {
             remotehost = "undefined";
         }

@@ -1,57 +1,118 @@
 package org.logstash.beats;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFactory;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.ServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.ssl.SslContext;
 import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.concurrent.DefaultEventExecutorGroup;
 import io.netty.util.concurrent.EventExecutorGroup;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.logstash.netty.SslSimpleBuilder;
-
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
 
 public class Server {
 
     private static final Logger logger = LogManager.getLogger();
 
-    private final int port;
-    private final String host;
-    private final int beatsHeandlerThreadCount;
-    private NioEventLoopGroup workGroup;
+    private int port;
+    private String host;
+    private int clientInactivityTimeoutSeconds;
+    private int beatsHeandlerThreadCount = 1;
+    private Class<? extends EventLoopGroup> workGroupClass = NioEventLoopGroup.class;
+    private EventLoopGroup workGroup;
+    private Class<? extends ServerChannel> channelClass = NioServerSocketChannel.class;
+    private ChannelFactory<? extends ServerChannel> channelFactory = null;
     private IMessageListener messageListener = new MessageListener();
-    private SslSimpleBuilder sslBuilder;
-    private BeatsInitializer beatsInitializer;
+    private SslContext tlsContext = null;
+    private BeatsInitializer beatsInitializer = null;
 
-    private final int clientInactivityTimeoutSeconds;
 
-    public Server(String host, int p, int timeout, int threadCount) {
+    public Server() {
+        try {
+            host = InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public Server setHost(String host) {
         this.host = host;
-        port = p;
-        clientInactivityTimeoutSeconds = timeout;
-        beatsHeandlerThreadCount = threadCount;
+        return this;
     }
 
-    public void enableSSL(SslSimpleBuilder builder) {
-        sslBuilder = builder;
+    public Server setPort(int port) {
+        this.port = port;
+        return this;
     }
 
-    public Server listen() throws InterruptedException {
+    public Server setClientInactivityTimeout(int clientInactivityTimeoutSeconds) {
+        this.clientInactivityTimeoutSeconds = clientInactivityTimeoutSeconds;
+        return this;
+    }
+
+    public Server setBeatsHeandlerThreadCount(int beatsHeandlerThreadCount) {
+        this.beatsHeandlerThreadCount = beatsHeandlerThreadCount;
+        return this;
+    }
+
+    public Server enableSSL(SslContext tlsContext) {
+        this.tlsContext = tlsContext;
+        return this;
+    }
+
+    public Server setEventLoopGroupClass(Class<? extends EventLoopGroup> workGroupClass) {
+        this.workGroupClass = workGroupClass;
+        return this;
+    }
+
+    public Server setChannelClass(Class<? extends ServerChannel> channelClass) {
+        this.channelClass = channelClass;
+        return this;
+    }
+
+    public Server setChannelFactory(ChannelFactory<? extends ServerChannel> channelFactory) {
+        this.channelFactory = channelFactory;
+        return this;
+    }
+
+    public Server setMessageListener(IMessageListener listener) {
+        messageListener = listener;
+        return this;
+    }
+
+    public Server listen() throws InterruptedException, IllegalArgumentException, IllegalStateException {
         if (workGroup != null) {
             try {
                 logger.debug("Shutting down existing worker group before starting");
                 workGroup.shutdownGracefully().sync();
             } catch (Exception e) {
                 logger.error("Could not shut down worker group before starting", e);
+                throw new IllegalStateException("Could not shut down worker group before starting", e);
             }
         }
-        workGroup = new NioEventLoopGroup();
+        try {
+            workGroup = workGroupClass.newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassCastException e) {
+            throw new IllegalArgumentException("Class " + workGroupClass.getName() + " can't be used for a workgroup", e);
+        }
         try {
             logger.info("Starting server on port: {}", port);
 
@@ -61,10 +122,17 @@ public class Server {
 
             ServerBootstrap server = new ServerBootstrap();
             server.group(workGroup)
-            .channel(NioServerSocketChannel.class)
             // Since the protocol doesn't support yet a remote close from the server and we don't want to have 'unclosed' socket lying around we have to use `SO_LINGER` to force the close of the socket.
             .childOption(ChannelOption.SO_LINGER, 0)
             .childHandler(beatsInitializer);
+
+            if (channelFactory != null) {
+                server.channelFactory(channelFactory);
+            } else if (channelClass != null) {
+                server.channel(channelClass);
+            } else {
+                throw new IllegalArgumentException("No usable channel source");
+            }
 
             Channel channel = server.bind(host, port).sync().channel();
             channel.closeFuture().sync();
@@ -95,12 +163,8 @@ public class Server {
         }
     }
 
-    public void setMessageListener(IMessageListener listener) {
-        messageListener = listener;
-    }
-
     public boolean isSslEnable() {
-        return this.sslBuilder != null;
+        return tlsContext != null;
     }
 
     private class BeatsInitializer extends ChannelInitializer<SocketChannel> {
@@ -129,25 +193,26 @@ public class Server {
 
         }
 
+        @Override
         public void initChannel(SocketChannel socket) throws IOException, NoSuchAlgorithmException, CertificateException {
             ChannelPipeline pipeline = socket.pipeline();
 
             if (enableSSL) {
-                SslHandler sslHandler = sslBuilder.build(socket.alloc());
+                SslHandler sslHandler = tlsContext.newHandler(socket.alloc());
                 pipeline.addLast(SSL_HANDLER, sslHandler);
             }
             pipeline.addLast(idleExecutorGroup, IDLESTATE_HANDLER,
                              new IdleStateHandler(clientInactivityTimeoutSeconds, IDLESTATE_WRITER_IDLE_TIME_SECONDS, clientInactivityTimeoutSeconds));
             pipeline.addLast(BEATS_ACKER, new AckEncoder());
             pipeline.addLast(CONNECTION_HANDLER, new ConnectionHandler());
-            pipeline.addLast(beatsHandlerExecutorGroup, new BeatsParser(), new BeatsHandler(this.message));
+            pipeline.addLast(beatsHandlerExecutorGroup, new BeatsParser(), new BeatsHandler(message));
         }
 
         @Override
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             logger.warn("Exception caught in channel initializer", cause);
             try {
-                this.message.onChannelInitializeException(ctx, cause);
+                message.onChannelInitializeException(ctx, cause);
             } finally {
                 super.exceptionCaught(ctx, cause);
             }
