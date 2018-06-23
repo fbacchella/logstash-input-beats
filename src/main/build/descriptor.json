@@ -20,13 +20,9 @@
   },
   "files": [
     {
-      "includePattern": "target/(.*\\.jar)",
-      "uploadPattern": "/fr/loghub/netty-beats/${project.version}/$1"
+      "includePattern": "target/deploy/(fr/loghub/netty-beats/${project.version}/.*)",
+      "uploadPattern": "$1"
     },
-    {
-      "includePattern": "pom.xml",
-      "uploadPattern": "/fr/loghub/netty-beats/${project.version}/netty-beats-${project.version}.pom"
-    }
   ],
   "publish": true
 }
