@@ -18,7 +18,6 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
     private final IMessageListener messageListener;
     private ChannelHandlerContext context;
 
-
     public BeatsHandler(IMessageListener listener) {
         messageListener = listener;
     }

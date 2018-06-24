@@ -81,7 +81,6 @@ public class Message implements Comparable<Message> {
         this.batch = batch;
     }
 
-
     public String getIdentityStream() {
         if (identityStream == null) {
             identityStream = extractIdentityStream();
@@ -102,9 +101,9 @@ public class Message implements Comparable<Message> {
             } else {
                 return beatsData.get("name") + "-" + beatsData.get("source");
             }
+        } else {
+            return null;
         }
-
-        return null;
     }
 
 }

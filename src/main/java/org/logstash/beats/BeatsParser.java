@@ -1,6 +1,5 @@
 package org.logstash.beats;
 
-
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.ChannelHandlerContext;
@@ -15,7 +14,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterOutputStream;
-
 
 public class BeatsParser extends ByteToMessageDecoder {
 
