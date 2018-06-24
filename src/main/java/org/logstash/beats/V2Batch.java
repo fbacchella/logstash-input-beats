@@ -31,10 +31,7 @@ public class V2Batch implements Batch, Closeable {
     public Iterator<Message> iterator() {
         return new Iterator<Message>() {
             private int read = 0;
-            private ByteBuf readerBuffer = internalBuffer.asReadOnly();
-            {
-                readerBuffer.resetReaderIndex();
-            }
+            private ByteBuf readerBuffer = internalBuffer.asReadOnly().resetReaderIndex();
             @Override
             public boolean hasNext() {
                 return read < written;
