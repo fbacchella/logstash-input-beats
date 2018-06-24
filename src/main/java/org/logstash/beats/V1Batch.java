@@ -12,15 +12,10 @@ public class V1Batch implements Batch {
 
     private int batchSize;
     private List<Message> messages = new ArrayList<>();
-    private byte protocol = Protocol.VERSION_1;
 
     @Override
     public byte getProtocol() {
-        return protocol;
-    }
-
-    public void setProtocol(byte protocol) {
-        this.protocol = protocol;
+        return Protocol.VERSION_1;
     }
 
     /**
@@ -64,6 +59,11 @@ public class V1Batch implements Batch {
 
     @Override
     public void release() {
+        //no-op
+    }
+
+    @Override
+    public void close() {
         //no-op
     }
 

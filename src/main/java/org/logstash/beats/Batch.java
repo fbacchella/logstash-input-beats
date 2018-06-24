@@ -1,9 +1,11 @@
 package org.logstash.beats;
 
+import java.io.Closeable;
+
 /**
  * Interface representing a Batch of {@link Message}.
  */
-public interface Batch extends Iterable<Message> {
+public interface Batch extends Iterable<Message>, Closeable {
 
     /**
      * Returns the protocol of the sent messages that this batch was constructed from

@@ -1,6 +1,5 @@
 package org.logstash.beats;
 
-import java.io.Closeable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -10,18 +9,12 @@ import io.netty.buffer.PooledByteBufAllocator;
 /**
  * Implementation of {@link Batch} for the v2 protocol backed by ByteBuf. *must* be released after use.
  */
-public class V2Batch implements Batch, Closeable {
+public class V2Batch implements Batch {
 
     private ByteBuf internalBuffer = PooledByteBufAllocator.DEFAULT.buffer();
     private int written = 0;
     private static final int SIZE_OF_INT = 4;
     private int batchSize;
-
-    public void setProtocol(byte protocol) {
-        if (protocol != Protocol.VERSION_2) {
-            throw new IllegalArgumentException("Only version 2 protocol is supported");
-        }
-    }
 
     @Override
     public byte getProtocol() {
