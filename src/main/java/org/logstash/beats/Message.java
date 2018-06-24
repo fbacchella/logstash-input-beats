@@ -1,5 +1,6 @@
 package org.logstash.beats;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import io.netty.buffer.ByteBuf;
@@ -18,7 +19,8 @@ public class Message implements Comparable<Message> {
     private Batch batch;
     private ByteBuf buffer;
 
-    public static final ObjectMapper MAPPER = new ObjectMapper().registerModule(new AfterburnerModule());
+    private static final JsonFactory factory = new JsonFactory();
+    public static final ThreadLocal<ObjectMapper> MAPPER = ThreadLocal.withInitial(() -> new ObjectMapper(factory).registerModule(new AfterburnerModule()));
 
     /**
      * Create a message using a map of key, value pairs
@@ -56,8 +58,8 @@ public class Message implements Comparable<Message> {
      */
     public Map<?, ?> getData() {
         if (data == null && buffer != null) {
-            try (ByteBufInputStream byteBufInputStream = new ByteBufInputStream(buffer)) {
-                data = MAPPER.readValue((InputStream) byteBufInputStream, Map.class);
+            try (InputStream byteBufInputStream = new ByteBufInputStream(buffer)) {
+                data = MAPPER.get().readValue(byteBufInputStream, Map.class);
                 buffer = null;
             } catch (IOException e) {
                 throw new UncheckedIOException("Unable to parse beats payload ", e);
