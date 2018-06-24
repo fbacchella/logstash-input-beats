@@ -109,7 +109,7 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
         SocketAddress remote = context.channel().remoteAddress();
 
         String localhost ;
-        if (local != null && local instanceof InetSocketAddress) {
+        if (local instanceof InetSocketAddress) {
             InetSocketAddress inetlocal = (InetSocketAddress)local;
             localhost = inetlocal.getAddress().getHostAddress() + ":" + inetlocal.getPort();
         } else {
@@ -117,8 +117,8 @@ public class BeatsHandler extends SimpleChannelInboundHandler<Batch> {
         }
 
         String remotehost;
-        if (remote != null && remote instanceof InetSocketAddress) {
-            InetSocketAddress inetremote = (InetSocketAddress)local;
+        if (remote instanceof InetSocketAddress) {
+            InetSocketAddress inetremote = (InetSocketAddress)remote;
             remotehost = inetremote.getAddress().getHostAddress() + ":" + inetremote.getPort();
         } else {
             remotehost = "undefined";
