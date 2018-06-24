@@ -1,18 +1,19 @@
 package org.logstash.beats;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.Test;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import org.junit.Test;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 public class V2BatchTest {
 
@@ -20,48 +21,49 @@ public class V2BatchTest {
 
     @Test
     public void testIsEmpty() {
-        V2Batch batch = new V2Batch();
-        assertTrue(batch.isEmpty());
-        ByteBuf content = messageContents();
-        batch.addMessage(1, content, content.readableBytes());
-        assertFalse(batch.isEmpty());
+        try (V2Batch batch = new V2Batch()){
+            assertTrue(batch.isEmpty());
+            ByteBuf content = messageContents();
+            batch.addMessage(1, content, content.readableBytes());
+            assertFalse(batch.isEmpty());
+        }
     }
 
     @Test
     public void testSize() {
-        V2Batch batch = new V2Batch();
-        assertEquals(0, batch.size());
-        ByteBuf content = messageContents();
-        batch.addMessage(1, content, content.readableBytes());
-        assertEquals(1, batch.size());
+        try (V2Batch batch = new V2Batch()) {
+            assertEquals(0, batch.size());
+            ByteBuf content = messageContents();
+            batch.addMessage(1, content, content.readableBytes());
+            assertEquals(1, batch.size());
+        }
     }
 
     @Test
     public void testGetProtocol() {
-        assertEquals(Protocol.VERSION_2, new V2Batch().getProtocol());
+        try (V2Batch batch = new V2Batch()) {
+            assertEquals(Protocol.VERSION_2, batch.getProtocol());
+        }
     }
 
     @Test
     public void testCompleteReturnTrueWhenIReceiveTheSameAmountOfEvent() {
-        V2Batch batch = new V2Batch();
-        int numberOfEvent = 2;
-
-        batch.setBatchSize(numberOfEvent);
-
-        for (int i = 1; i <= numberOfEvent; i++) {
-            ByteBuf content = messageContents();
-            batch.addMessage(i, content, content.readableBytes());
+        try (V2Batch batch = new V2Batch()) {
+            int numberOfEvent = 2;
+            batch.setBatchSize(numberOfEvent);
+            for (int i = 1; i <= numberOfEvent; i++) {
+                ByteBuf content = messageContents();
+                batch.addMessage(i, content, content.readableBytes());
+            }
+            assertTrue(batch.isComplete());
         }
-
-        assertTrue(batch.isComplete());
     }
 
     @Test
     public void testBigBatch() {
-        V2Batch batch = new V2Batch();
-        int size = 4096;
-        assertEquals(0, batch.size());
-        try {
+        try (V2Batch batch = new V2Batch()) {
+            int size = 4096;
+            assertEquals(0, batch.size());
             ByteBuf content = messageContents();
             for (int i = 0; i < size; i++) {
                 batch.addMessage(i, content, content.readableBytes());
@@ -71,22 +73,19 @@ public class V2BatchTest {
             for (Message message : batch) {
                 assertEquals(message.getSequence(), i++);
             }
-        } finally {
-            batch.release();
         }
-    }
 
+    }
 
     @Test
     public void testCompleteReturnWhenTheNumberOfEventDoesntMatchBatchSize() {
-        V2Batch batch = new V2Batch();
-        int numberOfEvent = 2;
-
-        batch.setBatchSize(numberOfEvent);
-        ByteBuf content = messageContents();
-        batch.addMessage(1, content, content.readableBytes());
-
-        assertFalse(batch.isComplete());
+        try (V2Batch batch = new V2Batch()) {
+            int numberOfEvent = 2;
+            batch.setBatchSize(numberOfEvent);
+            ByteBuf content = messageContents();
+            batch.addMessage(1, content, content.readableBytes());
+            assertFalse(batch.isComplete());
+        }
     }
 
     public static ByteBuf messageContents() {

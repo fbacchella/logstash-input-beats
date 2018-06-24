@@ -1,6 +1,8 @@
 package org.logstash.beats;
 
+import java.io.Closeable;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -8,11 +10,10 @@ import io.netty.buffer.PooledByteBufAllocator;
 /**
  * Implementation of {@link Batch} for the v2 protocol backed by ByteBuf. *must* be released after use.
  */
-public class V2Batch implements Batch {
+public class V2Batch implements Batch, Closeable {
 
     private ByteBuf internalBuffer = PooledByteBufAllocator.DEFAULT.buffer();
     private int written = 0;
-    private int read = 0;
     private static final int SIZE_OF_INT = 4;
     private int batchSize;
 
@@ -28,20 +29,25 @@ public class V2Batch implements Batch {
     }
 
     public Iterator<Message> iterator() {
-        // Locks like to be broken, not sure about real hasNext usefulness
-        internalBuffer.resetReaderIndex();
         return new Iterator<Message>() {
+            private int read = 0;
+            private ByteBuf readerBuffer = internalBuffer.asReadOnly();
+            {
+                readerBuffer.resetReaderIndex();
+            }
             @Override
             public boolean hasNext() {
                 return read < written;
             }
-
             @Override
             public Message next() {
-                int sequenceNumber = internalBuffer.readInt();
-                int readableBytes = internalBuffer.readInt();
-                Message message = new Message(sequenceNumber, internalBuffer.slice(internalBuffer.readerIndex(), readableBytes));
-                internalBuffer.readerIndex(internalBuffer.readerIndex() + readableBytes);
+                if (read >= written) {
+                    throw new NoSuchElementException();
+                }
+                int sequenceNumber = readerBuffer.readInt();
+                int readableBytes = readerBuffer.readInt();
+                Message message = new Message(sequenceNumber, readerBuffer.slice(readerBuffer.readerIndex(), readableBytes));
+                readerBuffer.readerIndex(readerBuffer.readerIndex() + readableBytes);
                 message.setBatch(V2Batch.this);
                 read++;
                 return message;
@@ -93,6 +99,11 @@ public class V2Batch implements Batch {
     @Override
     public void release() {
         internalBuffer.release();
+    }
+
+    @Override
+    public void close() {
+        release();
     }
 
 }
