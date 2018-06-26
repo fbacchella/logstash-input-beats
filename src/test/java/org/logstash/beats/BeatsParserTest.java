@@ -6,6 +6,8 @@ import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.embedded.EmbeddedChannel;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -56,6 +58,11 @@ public class BeatsParserTest {
             this.byteBufBatch.addMessage(i, bytebuf, bytebuf.readableBytes());
         }
 
+    }
+    
+    @After
+    public void tearDown() {
+        byteBufBatch.release();
     }
 
     @Test

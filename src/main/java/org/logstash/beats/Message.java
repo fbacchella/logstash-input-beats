@@ -41,6 +41,7 @@ public class Message implements Comparable<Message> {
     public Message(int sequence, ByteBuf buffer) {
         this.sequence = sequence;
         this.buffer = buffer;
+        buffer.retain();
     }
 
     /**
@@ -60,6 +61,7 @@ public class Message implements Comparable<Message> {
         if (data == null && buffer != null) {
             try (InputStream byteBufInputStream = new ByteBufInputStream(buffer)) {
                 data = MAPPER.get().readValue(byteBufInputStream, Map.class);
+                buffer.release();
                 buffer = null;
             } catch (IOException e) {
                 throw new UncheckedIOException("Unable to parse beats payload ", e);
