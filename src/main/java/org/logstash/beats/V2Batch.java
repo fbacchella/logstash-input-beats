@@ -88,7 +88,10 @@ public class V2Batch implements Batch {
 
     @Override
     public void release() {
-        internalBuffer.release();
+        if (internalBuffer != null) {
+            internalBuffer.release();
+            internalBuffer = null;
+        }
     }
 
     @Override
