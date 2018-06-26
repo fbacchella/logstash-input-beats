@@ -219,7 +219,7 @@ public class BeatsParser extends ByteToMessageDecoder {
         batch = null;
     }
 
-    public class InvalidFrameProtocolException extends Exception {
+    public static class InvalidFrameProtocolException extends Exception {
         InvalidFrameProtocolException(String message) {
             super(message);
         }
