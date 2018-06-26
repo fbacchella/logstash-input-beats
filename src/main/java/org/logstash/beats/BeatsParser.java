@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -121,12 +122,12 @@ public class BeatsParser extends ByteToMessageDecoder {
             while (count < fieldsCount) {
                 int fieldLength = (int) in.readUnsignedInt();
                 ByteBuf fieldBuf = in.readBytes(fieldLength);
-                String field = fieldBuf.toString(Charset.forName("UTF8"));
+                String field = fieldBuf.toString(StandardCharsets.UTF_8);
                 fieldBuf.release();
 
                 int dataLength = (int) in.readUnsignedInt();
                 ByteBuf dataBuf = in.readBytes(dataLength);
-                String data = dataBuf.toString(Charset.forName("UTF8"));
+                String data = dataBuf.toString(StandardCharsets.UTF_8);
                 dataBuf.release();
 
                 dataMap.put(field, data);
