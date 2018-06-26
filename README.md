@@ -66,3 +66,13 @@ But it can also created and managed manually:
     channel.closeFuture().sync();
 ````
 
+It's available in Maven, just add in your dependencies:
+
+```
+<dependency>
+    <groupId>fr.loghub</groupId>
+    <artifactId>netty-beats</artifactId>
+    <version>1.0.0-RC1</version>
+</dependency>
+```
+
