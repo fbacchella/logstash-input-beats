@@ -1,21 +1,19 @@
 package org.logstash.beats;
 
-
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufOutputStream;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.ByteToMessageDecoder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.Inflater;
 import java.util.zip.InflaterOutputStream;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ByteToMessageDecoder;
 
 public class BeatsParser extends ByteToMessageDecoder {
 
@@ -44,6 +42,15 @@ public class BeatsParser extends ByteToMessageDecoder {
     private States currentState = States.READ_HEADER;
     private int requiredBytes = 0;
     private int sequence = 0;
+    private final int maxPayloadSize;
+
+    public BeatsParser() {
+        maxPayloadSize = -1;
+    }
+
+    public BeatsParser(int maxPayloadSize) {
+        this.maxPayloadSize = maxPayloadSize;
+    }
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
@@ -58,11 +65,13 @@ public class BeatsParser extends ByteToMessageDecoder {
             byte currentVersion = in.readByte();
             if (batch == null) {
                 if (Protocol.isVersion2(currentVersion)) {
-                    batch = new V2Batch();
                     logger.trace("Frame version 2 detected");
-                } else {
+                    batch = new V2Batch(maxPayloadSize);
+                } else if (Protocol.isVersion1(currentVersion)) {
                     logger.trace("Frame version 1 detected");
                     batch = new V1Batch();
+                } else {
+                    throw new InvalidFrameProtocolException("Unsupported protocol version: " + currentVersion);
                 }
             }
             transition(States.READ_FRAME_TYPE);
@@ -92,7 +101,8 @@ public class BeatsParser extends ByteToMessageDecoder {
         }
         case READ_WINDOW_SIZE: {
             logger.trace("Running: READ_WINDOW_SIZE");
-            batch.setBatchSize((int) in.readUnsignedInt());
+            int batchSize = tryReadUnsigned(in, "Invalid batch size", true);
+            batch.setBatchSize(batchSize);
 
             // This is unlikely to happen but I have no way to known when a frame is
             // actually completely done other than checking the windows and the sequence number,
@@ -110,30 +120,33 @@ public class BeatsParser extends ByteToMessageDecoder {
         case READ_DATA_FIELDS: {
             // Lumberjack version 1 protocol, which use the Key:Value format.
             logger.trace("Running: READ_DATA_FIELDS");
-            sequence = (int) in.readUnsignedInt();
-            int fieldsCount = (int) in.readUnsignedInt();
-            int count = 0;
-
-            if (fieldsCount <= 0) {
-                throw new InvalidFrameProtocolException("Invalid number of fields, received: " + fieldsCount);
-            }
+            sequence = tryReadUnsigned(in, "Invalid sequence number", true);
+            int fieldsCount = tryReadUnsigned(in, "Invalid number of fields", false);
 
             Map<String, String> dataMap = new HashMap<>(fieldsCount);
 
-            while (count < fieldsCount) {
-                int fieldLength = (int) in.readUnsignedInt();
+            // Use a long to avoid overflow
+            long currentPayload = 0;
+            for (int count = 0; count < fieldsCount ; count++) {
+                int fieldLength= tryReadUnsigned(in, "Oversized field name length", false);
+                currentPayload += fieldLength;
+                if (maxPayloadSize > 0 && currentPayload > maxPayloadSize) {
+                    throw new InvalidFrameProtocolException("Oversized payload: " + currentPayload);
+                }
                 ByteBuf fieldBuf = in.readBytes(fieldLength);
-                String field = fieldBuf.toString(Charset.forName("UTF8"));
+                String field = fieldBuf.toString(StandardCharsets.UTF_8);
                 fieldBuf.release();
 
-                int dataLength = (int) in.readUnsignedInt();
+                int dataLength = tryReadUnsigned(in, "Oversized field data length", true);
+                currentPayload += dataLength;
+                if (maxPayloadSize > 0 && currentPayload > maxPayloadSize) {
+                    throw new InvalidFrameProtocolException("Oversized payload: " + currentPayload);
+                }
                 ByteBuf dataBuf = in.readBytes(dataLength);
-                String data = dataBuf.toString(Charset.forName("UTF8"));
+                String data = dataBuf.toString(StandardCharsets.UTF_8);
                 dataBuf.release();
 
                 dataMap.put(field, data);
-
-                count++;
             }
             Message message = new Message(sequence, dataMap);
             ((V1Batch) batch).addMessage(message);
@@ -149,23 +162,17 @@ public class BeatsParser extends ByteToMessageDecoder {
         case READ_JSON_HEADER: {
             logger.trace("Running: READ_JSON_HEADER");
 
-            sequence = (int) in.readUnsignedInt();
-            int jsonPayloadSize = (int) in.readUnsignedInt();
-
-            if (jsonPayloadSize <= 0) {
-                throw new InvalidFrameProtocolException("Invalid json length, received: " + jsonPayloadSize);
-            }
-
+            sequence = tryReadUnsigned(in, "Invalid sequence number", true);
+            int jsonPayloadSize = tryReadUnsigned(in, "Invalid json length", false);
             transition(States.READ_JSON, jsonPayloadSize);
             break;
         }
         case READ_COMPRESSED_FRAME_HEADER: {
             logger.trace("Running: READ_COMPRESSED_FRAME_HEADER");
-
-            transition(States.READ_COMPRESSED_FRAME, in.readInt());
+            int compressedFrameSize = tryReadUnsigned(in, "Invalid compressed frame size", false);
+            transition(States.READ_COMPRESSED_FRAME, compressedFrameSize);
             break;
         }
-
         case READ_COMPRESSED_FRAME: {
             logger.trace("Running: READ_COMPRESSED_FRAME");
             // Use the compressed size as the safe start for the buffer.
@@ -183,7 +190,6 @@ public class BeatsParser extends ByteToMessageDecoder {
                     buffer.release();
                 }
             }
-
             break;
         }
         case READ_JSON: {
@@ -199,6 +205,9 @@ public class BeatsParser extends ByteToMessageDecoder {
             break;
         }
         }
+        if (maxPayloadSize > 0 && requiredBytes > maxPayloadSize) {
+            throw new InvalidFrameProtocolException("Oversized payload: " + requiredBytes);
+        }
     }
 
     private boolean hasEnoughBytes(ByteBuf in) {
@@ -209,9 +218,9 @@ public class BeatsParser extends ByteToMessageDecoder {
         transition(next, next.length);
     }
 
-    private void transition(States nextState, int requiredBytes) {
-        logger.trace("{}", () -> "Transition, from: " + currentState + ", to: " + nextState + ", requiring " + requiredBytes + " bytes");
-        this.currentState = nextState;
+    private void transition(States next, int requiredBytes) {
+        logger.trace("{}", () -> "Transition, from: " + currentState + ", to: " + next + ", requiring " + requiredBytes + " bytes");
+        this.currentState = next;
         this.requiredBytes = requiredBytes;
     }
 
@@ -221,7 +230,19 @@ public class BeatsParser extends ByteToMessageDecoder {
         batch = null;
     }
 
-    public class InvalidFrameProtocolException extends Exception {
+    private int tryReadUnsigned(ByteBuf in , String message, boolean canZero) throws InvalidFrameProtocolException {
+        long trylong = in.readUnsignedInt();
+        if (trylong == 0 && ! canZero) {
+            throw new InvalidFrameProtocolException(message + ", received: " + trylong);
+        }
+        try {
+            return Math.toIntExact(trylong);
+        } catch (ArithmeticException e) {
+            throw new InvalidFrameProtocolException(message + ", received: " + trylong);
+        }
+    }
+
+    public static class InvalidFrameProtocolException extends Exception {
         InvalidFrameProtocolException(String message) {
             super(message);
         }

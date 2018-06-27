@@ -4,7 +4,6 @@ import io.netty.channel.ChannelHandlerContext;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-
 /**
  * This class is implemented in ruby in `lib/logstash/inputs/beats/message_listener`,
  * this class is used to link the events triggered from the different connection to the actual
@@ -13,7 +12,6 @@ import org.apache.logging.log4j.Logger;
 public class MessageListener implements IMessageListener {
 
     private static final Logger logger = LogManager.getLogger();
-
 
     /**
      * This is triggered on every new message parsed by the beats handler

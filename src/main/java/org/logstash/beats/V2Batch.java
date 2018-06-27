@@ -4,6 +4,8 @@ import java.io.Closeable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import org.logstash.beats.BeatsParser.InvalidFrameProtocolException;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 
@@ -16,11 +18,14 @@ public class V2Batch implements Batch, Closeable {
     private int written = 0;
     private static final int SIZE_OF_INT = 4;
     private int batchSize;
+    private final int maxPayloadSize;
 
-    public void setProtocol(byte protocol) {
-        if (protocol != Protocol.VERSION_2) {
-            throw new IllegalArgumentException("Only version 2 protocol is supported");
-        }
+    public V2Batch() {
+        maxPayloadSize = -1;
+    }
+
+    public V2Batch(int maxPayloadSize) {
+        this.maxPayloadSize = maxPayloadSize;
     }
 
     @Override
@@ -31,10 +36,7 @@ public class V2Batch implements Batch, Closeable {
     public Iterator<Message> iterator() {
         return new Iterator<Message>() {
             private int read = 0;
-            private ByteBuf readerBuffer = internalBuffer.asReadOnly();
-            {
-                readerBuffer.resetReaderIndex();
-            }
+            private ByteBuf readerBuffer = internalBuffer.asReadOnly().resetReaderIndex();
             @Override
             public boolean hasNext() {
                 return read < written;
@@ -85,11 +87,19 @@ public class V2Batch implements Batch, Closeable {
      * @param sequenceNumber sequence number of the message within the batch
      * @param buffer A ByteBuf pointing to serialized JSon
      * @param size size of the serialized Json
+     * @throws InvalidFrameProtocolException 
      */
-    void addMessage(int sequenceNumber, ByteBuf buffer, int size) {
+    void addMessage(int sequenceNumber, ByteBuf buffer, int size) throws InvalidFrameProtocolException {
         written++;
         if (internalBuffer.writableBytes() < size + (2 * SIZE_OF_INT)) {
-            internalBuffer.capacity(internalBuffer.capacity() + size + (2 * SIZE_OF_INT));
+            // increase size slightly faster than what is really need,
+            // to avoid doing an alloc for each message
+            int newSize = (int) ((internalBuffer.capacity() + size + (2 * SIZE_OF_INT)) * 1.5);
+            if (maxPayloadSize > 0 && newSize > maxPayloadSize) {
+                release();
+                throw new InvalidFrameProtocolException("Oversized payload: " + newSize);
+            }
+            internalBuffer.capacity(newSize);
         }
         internalBuffer.writeInt(sequenceNumber);
         internalBuffer.writeInt(size);
@@ -98,7 +108,10 @@ public class V2Batch implements Batch, Closeable {
 
     @Override
     public void release() {
-        internalBuffer.release();
+        if (internalBuffer != null) {
+            internalBuffer.release();
+            internalBuffer = null;
+        }
     }
 
     @Override

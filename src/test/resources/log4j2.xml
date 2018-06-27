@@ -9,6 +9,6 @@
         <Root level="warn">
             <AppenderRef ref="Console" />
         </Root>
-        <Logger name="org.logstash.beats" level="debug" />
+        <Logger name="org.logstash.beats" level="warn" />
     </Loggers>
 </Configuration>

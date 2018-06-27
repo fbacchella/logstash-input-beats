@@ -21,4 +21,8 @@ public class Protocol {
         return Protocol.VERSION_2 == versionRead;
     }
 
+    public static boolean isVersion1(byte versionRead) {
+        return Protocol.VERSION_1 == versionRead;
+    }
+
 }

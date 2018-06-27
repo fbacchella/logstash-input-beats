@@ -2,6 +2,7 @@ package org.logstash.beats;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
@@ -109,8 +110,8 @@ public class Server {
             }
         }
         try {
-            workGroup = workGroupClass.newInstance();
-        } catch (InstantiationException | IllegalAccessException | ClassCastException e) {
+            workGroup = workGroupClass.getDeclaredConstructor().newInstance();
+        } catch (InstantiationException | IllegalAccessException | ClassCastException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
             throw new IllegalArgumentException("Class " + workGroupClass.getName() + " can't be used for a workgroup", e);
         }
         try {

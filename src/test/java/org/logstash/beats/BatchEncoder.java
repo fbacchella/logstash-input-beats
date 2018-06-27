@@ -20,7 +20,6 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
 
     private final static Logger logger = LogManager.getLogger(BatchEncoder.class);
 
-
     @Override
     protected void encode(ChannelHandlerContext ctx, Batch batch, ByteBuf out) throws Exception {
         out.writeByte(batch.getProtocol());
@@ -55,7 +54,7 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
         payload.writeByte('J');
         payload.writeInt(message.getSequence());
 
-        byte[] json = Message.MAPPER.writeValueAsBytes(message.getData());
+        byte[] json = Message.MAPPER.get().writeValueAsBytes(message.getData());
         payload.writeInt(json.length);
         payload.writeBytes(json);
     }
