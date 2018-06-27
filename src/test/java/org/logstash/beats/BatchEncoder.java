@@ -20,7 +20,6 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
 
     private final static Logger logger = LogManager.getLogger(BatchEncoder.class);
 
-
     @Override
     protected void encode(ChannelHandlerContext ctx, Batch batch, ByteBuf out) throws Exception {
         out.writeByte(batch.getProtocol());

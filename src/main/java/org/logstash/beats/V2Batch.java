@@ -3,6 +3,8 @@ package org.logstash.beats;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import org.logstash.beats.BeatsParser.InvalidFrameProtocolException;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 
@@ -15,6 +17,15 @@ public class V2Batch implements Batch {
     private int written = 0;
     private static final int SIZE_OF_INT = 4;
     private int batchSize;
+    private final int maxPayloadSize;
+
+    public V2Batch() {
+        maxPayloadSize = -1;
+    }
+
+    public V2Batch(int maxPayloadSize) {
+        this.maxPayloadSize = maxPayloadSize;
+    }
 
     @Override
     public byte getProtocol() {
@@ -75,11 +86,19 @@ public class V2Batch implements Batch {
      * @param sequenceNumber sequence number of the message within the batch
      * @param buffer A ByteBuf pointing to serialized JSon
      * @param size size of the serialized Json
+     * @throws InvalidFrameProtocolException 
      */
-    void addMessage(int sequenceNumber, ByteBuf buffer, int size) {
+    void addMessage(int sequenceNumber, ByteBuf buffer, int size) throws InvalidFrameProtocolException {
         written++;
         if (internalBuffer.writableBytes() < size + (2 * SIZE_OF_INT)) {
-            internalBuffer.capacity(internalBuffer.capacity() + size + (2 * SIZE_OF_INT));
+            // increase size slightly faster than what is really need,
+            // to avoid doing an alloc for each message
+            int newSize = (int) ((internalBuffer.capacity() + size + (2 * SIZE_OF_INT)) * 1.5);
+            if (maxPayloadSize > 0 && newSize > maxPayloadSize) {
+                release();
+                throw new InvalidFrameProtocolException("Oversized payload: " + newSize);
+            }
+            internalBuffer.capacity(newSize);
         }
         internalBuffer.writeInt(sequenceNumber);
         internalBuffer.writeInt(size);

@@ -37,7 +37,7 @@ public class BeatsParserTest {
 
     @Before
     public void setup() throws Exception{
-        this.v1Batch = new V1Batch();
+        v1Batch = new V1Batch();
 
         for (int i = 1; i <= numberOfMessage; i++) {
             Map<String, String> map = new HashMap<>();
@@ -45,17 +45,17 @@ public class BeatsParserTest {
             map.put("from", "Little big Adventure");
 
             Message message = new Message(i, map);
-            this.v1Batch.addMessage(message);
+            v1Batch.addMessage(message);
         }
 
-        this.byteBufBatch = new V2Batch();
+        byteBufBatch = new V2Batch();
 
         for (int i = 1; i <= numberOfMessage; i++) {
             Map<String, String> map = new HashMap<>();
             map.put("line", "Another world");
             map.put("from", "Little big Adventure");
             ByteBuf bytebuf = Unpooled.wrappedBuffer(MAPPER.writeValueAsBytes(map));
-            this.byteBufBatch.addMessage(i, bytebuf, bytebuf.readableBytes());
+            byteBufBatch.addMessage(i, bytebuf, bytebuf.readableBytes());
         }
 
     }
@@ -73,8 +73,8 @@ public class BeatsParserTest {
 
     @Test
     public void testCompressedEncodingDecodingJson() {
-        Batch decodedBatch = decodeCompressedBatch(v1Batch);
-        assertMessages(v1Batch, decodedBatch);
+        Batch decodedBatch = decodeCompressedBatch(byteBufBatch);
+        assertMessages(byteBufBatch, decodedBatch);
     }
 
     @Test
@@ -132,6 +132,22 @@ public class BeatsParserTest {
     }
 
     @Test
+    public void testOversizedFields() {
+        thrown.expectCause(isA(BeatsParser.InvalidFrameProtocolException.class));
+
+        Batch decodedBatch = decodeBatch(v1Batch, 9);
+        assertMessages(v1Batch, decodedBatch);
+    }
+
+    @Test
+    public void testOversizedJson() {
+        thrown.expectCause(isA(BeatsParser.InvalidFrameProtocolException.class));
+
+        Batch decodedBatch = decodeBatch(byteBufBatch, 9);
+        assertMessages(byteBufBatch, decodedBatch);
+    }
+
+    @Test
     public void testShouldNotCrashOnGarbageData() {
         thrown.expectCause(isA(BeatsParser.InvalidFrameProtocolException.class));
 
@@ -144,8 +160,8 @@ public class BeatsParserTest {
 
 
     @Test
-    public void testNegativeJsonPayloadShouldRaiseAnException() throws JsonProcessingException {
-        sendInvalidJSonPayload(-1);
+    public void testOverflowJsonPayloadShouldRaiseAnException() throws JsonProcessingException {
+        sendInvalidJSonPayload(4294967295L);
     }
 
     @Test
@@ -154,8 +170,8 @@ public class BeatsParserTest {
     }
 
     @Test
-    public void testNegativeFieldsCountShouldRaiseAnException() {
-        sendInvalidV1Payload(-1);
+    public void testOverflowFieldsCountShouldRaiseAnException() {
+        sendInvalidV1Payload(Integer.MAX_VALUE + 1L);
     }
 
     @Test
@@ -163,7 +179,20 @@ public class BeatsParserTest {
         sendInvalidV1Payload(0);
     }
 
-    private void sendInvalidV1Payload(int size) {
+    @Test
+    public void testUnsupportedVersionShouldRaiseAnException() {
+        thrown.expectCause(isA(BeatsParser.InvalidFrameProtocolException.class));
+        thrown.expectMessage("Unsupported protocol version: 3");
+
+        ByteBuf payload = Unpooled.buffer();
+
+        payload.writeByte(3);
+        sendPayloadToParser(payload);
+
+    }
+
+
+    private void sendInvalidV1Payload(long size) {
         thrown.expectCause(isA(BeatsParser.InvalidFrameProtocolException.class));
         thrown.expectMessage("Invalid number of fields, received: " + size);
 
@@ -175,7 +204,7 @@ public class BeatsParserTest {
         payload.writeByte(Protocol.VERSION_1);
         payload.writeByte('D');
         payload.writeInt(1);
-        payload.writeInt(size);
+        payload.writeInt((int)size);
 
         byte[] key = "message".getBytes();
         byte[] value = "Hola".getBytes();
@@ -188,9 +217,9 @@ public class BeatsParserTest {
         sendPayloadToParser(payload);
     }
 
-    private void sendInvalidJSonPayload(int size) throws JsonProcessingException {
+    private void sendInvalidJSonPayload(long l) throws JsonProcessingException {
         thrown.expectCause(isA(BeatsParser.InvalidFrameProtocolException.class));
-        thrown.expectMessage("Invalid json length, received: " + size);
+        thrown.expectMessage("Invalid json length, received: " + l);
 
         Map<String, String> mapData = Collections.singletonMap("message", "hola");
 
@@ -202,7 +231,7 @@ public class BeatsParserTest {
         payload.writeByte(Protocol.VERSION_2);
         payload.writeByte('J');
         payload.writeInt(1);
-        payload.writeInt(size);
+        payload.writeInt((int)l);
 
         byte[] json = MAPPER.writeValueAsBytes(mapData);
         payload.writeBytes(json);
@@ -251,7 +280,11 @@ public class BeatsParserTest {
     }
 
     private Batch decodeBatch(Batch batch) {
-        EmbeddedChannel channel = new EmbeddedChannel(new BatchEncoder(), new BeatsParser());
+        return decodeBatch(batch, -1);
+    }
+
+    private Batch decodeBatch(Batch batch, int maxPayloadSize) {
+        EmbeddedChannel channel = new EmbeddedChannel(new BatchEncoder(), new BeatsParser(maxPayloadSize));
         channel.writeOutbound(batch);
         Object o = channel.readOutbound();
         channel.writeInbound(o);

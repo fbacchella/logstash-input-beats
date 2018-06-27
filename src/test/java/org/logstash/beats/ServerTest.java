@@ -15,6 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.logstash.beats.BeatsParser.InvalidFrameProtocolException;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
@@ -270,7 +271,7 @@ public class ServerTest {
      *
      */
     private class DummyV2Sender extends SimpleChannelInboundHandler<String> {
-        public void channelActive(ChannelHandlerContext ctx) {
+        public void channelActive(ChannelHandlerContext ctx) throws InvalidFrameProtocolException {
             V2Batch batch = new V2Batch();
             batch.setBatchSize(1);
             ByteBuf contents = V2BatchTest.messageContents();
