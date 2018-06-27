@@ -158,7 +158,6 @@ public class BeatsParserTest {
         sendPayloadToParser(randomBufferData);
     }
 
-
     @Test
     public void testOverflowJsonPayloadShouldRaiseAnException() throws JsonProcessingException {
         sendInvalidJSonPayload(4294967295L);
