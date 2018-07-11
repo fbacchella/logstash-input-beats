@@ -3,6 +3,8 @@ package org.logstash.beats;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.security.SecureRandom;
+import java.util.Collections;
 import java.util.HashMap;
 
 import static org.junit.Assert.*;
@@ -49,7 +51,20 @@ public class V1BatchTest {
     }
 
     @Test
-    public void testCompleteReturnWhenTheNumberOfEventDoesntMatchBatchSize() {
+    public void testCompleteBatchWithSequenceNumbersNotStartingAtOne() {
+        int numberOfEvent = 2;
+        int startSequenceNumber = new SecureRandom().nextInt(10000);
+        batch.setBatchSize(numberOfEvent);
+
+        for(int i = 1; i <= numberOfEvent; i++) {
+            batch.addMessage(new Message(startSequenceNumber + i, Collections.emptyMap()));
+        }
+
+        assertTrue(batch.isComplete());
+    }
+
+    @Test
+    public void TestCompleteReturnWhenTheNumberOfEventDoesntMatchBatchSize() {
         int numberOfEvent = 2;
 
         batch.setBatchSize(numberOfEvent);

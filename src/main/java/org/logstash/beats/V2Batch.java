@@ -18,6 +18,7 @@ public class V2Batch implements Batch {
     private static final int SIZE_OF_INT = 4;
     private int batchSize;
     private final int maxPayloadSize;
+    private int highestSequence = -1;
 
     public V2Batch() {
         maxPayloadSize = -1;
@@ -81,6 +82,11 @@ public class V2Batch implements Batch {
         return written == batchSize;
     }
 
+    @Override
+    public int getHighestSequence() {
+        return highestSequence;
+    }
+
     /**
      * Adds a message to the batch, which will be constructed into an actual {@link Message} lazily.
      * @param sequenceNumber sequence number of the message within the batch
@@ -103,6 +109,9 @@ public class V2Batch implements Batch {
         internalBuffer.writeInt(sequenceNumber);
         internalBuffer.writeInt(size);
         buffer.readBytes(internalBuffer, size);
+        if (sequenceNumber > highestSequence) {
+            highestSequence = sequenceNumber;
+        }
     }
 
     @Override

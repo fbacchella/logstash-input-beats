@@ -26,6 +26,12 @@ public interface Batch extends Iterable<Message>, Closeable {
     void setBatchSize(int batchSize);
 
     /**
+     * Returns the highest sequence number of the batch.
+     * @return
+     */
+    int getHighestSequence();
+
+    /**
      * Current number of messages in the batch
      * @return int
      */
