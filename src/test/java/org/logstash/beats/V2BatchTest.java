@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,7 +23,7 @@ public class V2BatchTest {
 
     @Test
     public void testIsEmpty() throws InvalidFrameProtocolException {
-        try (V2Batch batch = new V2Batch()){
+        try (V2Batch batch = new V2Batch()) {
             assertTrue(batch.isEmpty());
             ByteBuf content = messageContents();
             batch.addMessage(1, content, content.readableBytes());
@@ -75,7 +76,22 @@ public class V2BatchTest {
                 assertEquals(message.getSequence(), i++);
             }
         }
+    }
 
+    @Test
+    public void testHighSequence() throws InvalidFrameProtocolException {
+        try (V2Batch batch = new V2Batch()) {
+            int numberOfEvent = 2;
+            int startSequenceNumber = new SecureRandom().nextInt(10000);
+            batch.setBatchSize(numberOfEvent);
+            ByteBuf content = messageContents();
+
+            for (int i = 1; i <= numberOfEvent; i++) {
+                batch.addMessage(startSequenceNumber + i, content, content.readableBytes());
+            }
+
+            assertEquals(startSequenceNumber + numberOfEvent, batch.getHighestSequence());
+        }
     }
 
     @Test
