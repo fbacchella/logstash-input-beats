@@ -106,7 +106,7 @@ public class ConnectionHandler extends ChannelDuplexHandler {
      * @return  Returns true if this channel/connection has NOT finished processing it's payload. False otherwise.
      */
     public boolean sendKeepAlive(ChannelHandlerContext ctx) {
-        return  ctx.channel().hasAttr(CHANNEL_SEND_KEEP_ALIVE)  && ctx.channel().attr(CHANNEL_SEND_KEEP_ALIVE).get().get();
+        return  ctx.channel().hasAttr(CHANNEL_SEND_KEEP_ALIVE) && ctx.channel().attr(CHANNEL_SEND_KEEP_ALIVE).get().get();
     }
 
 }

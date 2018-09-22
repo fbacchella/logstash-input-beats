@@ -174,7 +174,6 @@ public class Server {
         private static final String CONNECTION_HANDLER = "connection-handler";
         private static final String BEATS_ACKER = "beats-acker";
 
-
         private static final int DEFAULT_IDLESTATEHANDLER_THREAD = 4;
         private static final int IDLESTATE_WRITER_IDLE_TIME_SECONDS = 5;
 
@@ -191,7 +190,6 @@ public class Server {
             this.localClientInactivityTimeoutSeconds = clientInactivityTimeoutSeconds;
             idleExecutorGroup = new DefaultEventExecutorGroup(DEFAULT_IDLESTATEHANDLER_THREAD);
             beatsHandlerExecutorGroup = new DefaultEventExecutorGroup(beatsHandlerThread);
-
         }
 
         @Override

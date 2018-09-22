@@ -101,7 +101,6 @@ public class BeatsHandlerTest {
         EmbeddedChannel embeddedChannel = new EmbeddedChannel(new BeatsHandler(spyListener));
         embeddedChannel.writeInbound(batch);
 
-
         assertEquals(messageCount, spyListener.getLastMessages().size());
         embeddedChannel.close();
     }
