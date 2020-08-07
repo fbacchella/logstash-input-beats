@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public class Message implements Comparable<Message> {
@@ -18,7 +19,6 @@ public class Message implements Comparable<Message> {
     private String identityStream;
     private Map<?, ?> data;
     private Batch batch;
-    private ByteBuf buffer;
 
     private static final JsonFactory factory = new JsonFactory();
     public static final ThreadLocal<ObjectMapper> MAPPER = ThreadLocal.withInitial(() -> new ObjectMapper(factory).registerModule(new AfterburnerModule()));
@@ -30,7 +30,7 @@ public class Message implements Comparable<Message> {
      */
     public Message(int sequence, Map<?, ?> map) {
         this.sequence = sequence;
-        this.data = map;
+        this.data = Collections.unmodifiableMap(new HashMap<>(map));
     }
 
     /**
@@ -39,10 +39,18 @@ public class Message implements Comparable<Message> {
      * @param sequence sequence number of the message
      * @param buffer {@link ByteBuf} buffer containing Json object
      */
+    @SuppressWarnings("unchecked")
     public Message(int sequence, ByteBuf buffer) {
         this.sequence = sequence;
-        this.buffer = buffer;
-        buffer.retain();
+        if (buffer.isReadable()) {
+            try (InputStream byteBufInputStream = new ByteBufInputStream(buffer)) {
+                data = Collections.unmodifiableMap(MAPPER.get().readValue(byteBufInputStream, Map.class));
+            } catch (IOException e) {
+                throw new UncheckedIOException("Unable to parse beats payload ", e);
+            }
+        } else {
+            data = Collections.emptyMap();
+        }
     }
 
     /**
@@ -55,26 +63,9 @@ public class Message implements Comparable<Message> {
 
     /**
      * Returns a list of key/value pairs representing the contents of the message.
-     * Note that this method is lazy if the Message was created using a {@link ByteBuf}
      * @return {@link Map} Map of key/value pairs
      */
     public Map<?, ?> getData() {
-        if (data == null && buffer != null) {
-            if (buffer.isReadable()) {
-                try (InputStream byteBufInputStream = new ByteBufInputStream(buffer)) {
-                    data = MAPPER.get().readValue(byteBufInputStream, Map.class);
-                } catch (IOException e) {
-                    throw new UncheckedIOException("Unable to parse beats payload ", e);
-                } finally {
-                    buffer.release();
-                    buffer = null;
-                }
-            } else {
-                data = Collections.emptyMap();
-                buffer.release();
-                buffer = null;
-            }
-        }
         return data;
     }
 
