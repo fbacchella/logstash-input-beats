@@ -1,5 +1,6 @@
 package org.logstash.beats;
 
+import java.io.Closeable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -11,7 +12,7 @@ import io.netty.buffer.PooledByteBufAllocator;
 /**
  * Implementation of {@link Batch} for the v2 protocol backed by ByteBuf. *must* be released after use.
  */
-public class V2Batch implements Batch {
+public class V2Batch implements Batch, Closeable {
 
     private ByteBuf internalBuffer = PooledByteBufAllocator.DEFAULT.buffer();
     private int written = 0;
@@ -21,11 +22,11 @@ public class V2Batch implements Batch {
     private int highestSequence = -1;
 
     public V2Batch() {
-        maxPayloadSize = -1;
+        maxPayloadSize = Integer.MAX_VALUE;
     }
 
     public V2Batch(int maxPayloadSize) {
-        this.maxPayloadSize = maxPayloadSize;
+        this.maxPayloadSize = maxPayloadSize < 0 ? Integer.MAX_VALUE : maxPayloadSize;
     }
 
     @Override
@@ -95,16 +96,17 @@ public class V2Batch implements Batch {
      * @throws InvalidFrameProtocolException 
      */
     void addMessage(int sequenceNumber, ByteBuf buffer, int size) throws InvalidFrameProtocolException {
+        if ((internalBuffer.capacity() + size + (2 * SIZE_OF_INT)) > maxPayloadSize) {
+            batchSize = written;
+            throw new InvalidFrameProtocolException("Oversized payload: " + (internalBuffer.capacity() + size + (2 * SIZE_OF_INT)));
+        }
         written++;
         if (internalBuffer.writableBytes() < size + (2 * SIZE_OF_INT)) {
             // increase size slightly faster than what is really need,
             // to avoid doing an alloc for each message
-            int newSize = (int) ((internalBuffer.capacity() + size + (2 * SIZE_OF_INT)) * 1.5);
-            if (maxPayloadSize > 0 && newSize > maxPayloadSize) {
-                release();
-                throw new InvalidFrameProtocolException("Oversized payload: " + newSize);
-            }
-            internalBuffer.capacity(newSize);
+            int newSize = (internalBuffer.capacity() + size + (2 * SIZE_OF_INT));
+            int effectiveNewSize = Math.min((int)(newSize * 1.5), maxPayloadSize);
+            internalBuffer.capacity(effectiveNewSize);
         }
         internalBuffer.writeInt(sequenceNumber);
         internalBuffer.writeInt(size);

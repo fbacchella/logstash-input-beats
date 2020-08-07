@@ -9,6 +9,7 @@ import io.netty.buffer.ByteBufInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Collections;
 import java.util.Map;
 
 public class Message implements Comparable<Message> {
@@ -59,12 +60,19 @@ public class Message implements Comparable<Message> {
      */
     public Map<?, ?> getData() {
         if (data == null && buffer != null) {
-            try (InputStream byteBufInputStream = new ByteBufInputStream(buffer)) {
-                data = MAPPER.get().readValue(byteBufInputStream, Map.class);
+            if (buffer.isReadable()) {
+                try (InputStream byteBufInputStream = new ByteBufInputStream(buffer)) {
+                    data = MAPPER.get().readValue(byteBufInputStream, Map.class);
+                } catch (IOException e) {
+                    throw new UncheckedIOException("Unable to parse beats payload ", e);
+                } finally {
+                    buffer.release();
+                    buffer = null;
+                }
+            } else {
+                data = Collections.emptyMap();
                 buffer.release();
                 buffer = null;
-            } catch (IOException e) {
-                throw new UncheckedIOException("Unable to parse beats payload ", e);
             }
         }
         return data;

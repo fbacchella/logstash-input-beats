@@ -2,6 +2,7 @@ package org.logstash.beats;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import java.security.SecureRandom;
@@ -91,6 +92,49 @@ public class V2BatchTest {
             }
 
             assertEquals(startSequenceNumber + numberOfEvent, batch.getHighestSequence());
+        }
+    }
+
+
+    @Test
+    public void testOversizedBatch() throws InvalidFrameProtocolException {
+        try (V2Batch batch = new V2Batch(2048)) {
+            int size = 4096;
+            assertEquals(0, batch.size());
+            ByteBuf content = messageContents();
+            InvalidFrameProtocolException ex = assertThrows(BeatsParser.InvalidFrameProtocolException.class, () -> {
+                for (int i = 0; i < size; i++) {
+                    batch.addMessage(i, content.asReadOnly(), content.readableBytes());
+                }
+            });
+            assertThrows(BeatsParser.InvalidFrameProtocolException.class, () -> {
+                batch.addMessage(70, content.asReadOnly(), content.readableBytes());
+            });
+            assertEquals("Oversized payload: 2071", ex.getMessage());
+            assertEquals(69, batch.size());
+            int i = 0;
+            for (Message message : batch) {
+                assertEquals(message.getSequence(), i++);
+                Map<?, ?> data = message.getData();
+                assertTrue(data.size() == 0 || data.size() == 1);
+            }
+        }
+    }
+
+    @Test
+    public void testNoDataBatch() throws InvalidFrameProtocolException {
+        try (V2Batch batch = new V2Batch(2048)) {
+            assertEquals(0, batch.size());
+            ByteBuf content = Unpooled.EMPTY_BUFFER;
+            batch.addMessage(0, content.asReadOnly(), content.readableBytes());
+            batch.addMessage(1, content.asReadOnly(), content.readableBytes());
+            assertEquals(2, batch.size());
+            int i = 0;
+            for (Message message : batch) {
+                assertEquals(message.getSequence(), i++);
+                Map<?, ?> data = message.getData();
+                assertTrue(data.size() == 0);
+            }
         }
     }
 

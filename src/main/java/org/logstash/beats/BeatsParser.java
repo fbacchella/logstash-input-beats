@@ -40,7 +40,8 @@ public class BeatsParser extends ByteToMessageDecoder {
     }
 
     private States currentState = States.READ_HEADER;
-    private int requiredBytes = 0;
+    private int requiredBytes = States.READ_HEADER.length;
+    private int allRequiredBytes = requiredBytes;
     private int sequence = 0;
     private final int maxPayloadSize;
 
@@ -200,13 +201,9 @@ public class BeatsParser extends ByteToMessageDecoder {
                 out.add(batch);
                 batchComplete();
             }
-
             transition(States.READ_HEADER);
             break;
         }
-        }
-        if (maxPayloadSize > 0 && requiredBytes > maxPayloadSize) {
-            throw new InvalidFrameProtocolException("Oversized payload: " + requiredBytes);
         }
     }
 
@@ -214,14 +211,20 @@ public class BeatsParser extends ByteToMessageDecoder {
         return in.readableBytes() >= requiredBytes;
     }
 
-    private void transition(States next) {
+    private void transition(States next) throws InvalidFrameProtocolException {
         transition(next, next.length);
     }
 
-    private void transition(States next, int requiredBytes) {
+    private void transition(States next, int requiredBytes) throws InvalidFrameProtocolException {
         logger.trace("{}", () -> "Transition, from: " + currentState + ", to: " + next + ", requiring " + requiredBytes + " bytes");
         this.currentState = next;
         this.requiredBytes = requiredBytes;
+        if (requiredBytes > 0 && maxPayloadSize >= 0) {
+            allRequiredBytes += requiredBytes;
+            if (allRequiredBytes > maxPayloadSize) {
+                throw new InvalidFrameProtocolException("Oversized payload: " + allRequiredBytes);
+            }
+        }
     }
 
     private void batchComplete() {
