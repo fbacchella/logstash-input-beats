@@ -1,11 +1,11 @@
 package org.logstash.beats;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.embedded.EmbeddedChannel;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 
 import org.junit.After;
 import org.junit.Before;
@@ -13,16 +13,17 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Random;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.embedded.EmbeddedChannel;
 
 import static org.hamcrest.Matchers.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-
 
 public class BeatsParserTest {
 
@@ -32,6 +33,7 @@ public class BeatsParserTest {
 
     private final int numberOfMessage = 20;
 
+    @SuppressWarnings("deprecation")
     @Rule
     public ExpectedException thrown = ExpectedException.none();
 
@@ -57,30 +59,32 @@ public class BeatsParserTest {
             ByteBuf bytebuf = Unpooled.wrappedBuffer(MAPPER.writeValueAsBytes(map));
             byteBufBatch.addMessage(i, bytebuf, bytebuf.readableBytes());
         }
-
     }
-    
+
     @After
     public void tearDown() {
-        byteBufBatch.release();
+        Optional.ofNullable(byteBufBatch).ifPresent(V2Batch::release);
     }
 
     @Test
     public void testEncodingDecodingJson() {
         Batch decodedBatch = decodeBatch(v1Batch);
         assertMessages(v1Batch, decodedBatch);
+        decodedBatch.release();
     }
 
     @Test
     public void testCompressedEncodingDecodingJson() {
         Batch decodedBatch = decodeCompressedBatch(byteBufBatch);
         assertMessages(byteBufBatch, decodedBatch);
+        decodedBatch.release();
     }
 
     @Test
     public void testEncodingDecodingFields() {
         Batch decodedBatch = decodeBatch(v1Batch);
         assertMessages(v1Batch, decodedBatch);
+        decodedBatch.release();
     }
 
     @Test
@@ -104,6 +108,8 @@ public class BeatsParserTest {
 
         Batch decodedBatch = decodeBatch(v2Batch);
         assertMessages(v2Batch, decodedBatch);
+        decodedBatch.release();
+        v2Batch.release();
     }
 
     @Test
@@ -123,12 +129,14 @@ public class BeatsParserTest {
 
         Batch decodedBatch = decodeBatch(batch);
         assertMessages(batch, decodedBatch);
+        decodedBatch.release();
     }
 
     @Test
     public void testCompressedEncodingDecodingFields() {
         Batch decodedBatch = decodeCompressedBatch(v1Batch);
         assertMessages(this.v1Batch, decodedBatch);
+        decodedBatch.release();
     }
 
     @Test
@@ -137,14 +145,17 @@ public class BeatsParserTest {
 
         Batch decodedBatch = decodeBatch(v1Batch, 9);
         assertMessages(v1Batch, decodedBatch);
+        decodedBatch.release();
     }
 
     @Test
     public void testOversizedJson() {
         thrown.expectCause(isA(BeatsParser.InvalidFrameProtocolException.class));
+        thrown.expectMessage("Oversized payload: 16");
 
         Batch decodedBatch = decodeBatch(byteBufBatch, 9);
         assertMessages(byteBufBatch, decodedBatch);
+        decodedBatch.release();
     }
 
     @Test
@@ -187,9 +198,7 @@ public class BeatsParserTest {
 
         payload.writeByte(3);
         sendPayloadToParser(payload);
-
     }
-
 
     private void sendInvalidV1Payload(long size) {
         thrown.expectCause(isA(BeatsParser.InvalidFrameProtocolException.class));

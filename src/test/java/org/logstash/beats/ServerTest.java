@@ -50,7 +50,7 @@ public class ServerTest {
         int inactivityTime = 3; // in seconds
         int concurrentConnections = 10;
 
-        Random random = new Random();
+        AtomicInteger connected = new AtomicInteger(0);
 
         CountDownLatch latch = new CountDownLatch(concurrentConnections);
 
@@ -66,7 +66,7 @@ public class ServerTest {
         server.setMessageListener(new MessageListener() {
             public void onNewConnection(ChannelHandlerContext ctx) {
                 // Make sure connection is closed on exception too.
-                if (random.nextInt(10) < 1) {
+                if (connected.incrementAndGet() == 1) {
                     throw new RuntimeException("Dummy");
                 }
             }
@@ -278,6 +278,7 @@ public class ServerTest {
             batch.addMessage(1, contents, contents.readableBytes());
 
             ctx.writeAndFlush(batch);
+            batch.release();
         }
 
         @Override
@@ -315,21 +316,11 @@ public class ServerTest {
      * @return an available listen port
      */
     private static int tryGetPort() {
-        ServerSocket ss = null;
-        try {
-            ss = new ServerSocket(0);
+        try (ServerSocket ss = new ServerSocket(0)){
             ss.setReuseAddress(true);
             return ss.getLocalPort();
         } catch (IOException e) {
             return -1;
-        } finally {
-            if (ss != null) {
-                try {
-                    ss.close();
-                } catch (IOException e) {
-                    /* should not be thrown */
-                }
-            }
         }
     }
 

@@ -69,7 +69,7 @@ public class V2BatchTest {
             assertEquals(0, batch.size());
             ByteBuf content = messageContents();
             for (int i = 0; i < size; i++) {
-                batch.addMessage(i, content, content.readableBytes());
+                batch.addMessage(i, content.asReadOnly(), content.readableBytes());
             }
             assertEquals(size, batch.size());
             int i = 0;
