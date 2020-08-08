@@ -1,5 +1,6 @@
 package org.logstash.beats;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
@@ -44,6 +45,7 @@ public class BeatsParser extends ByteToMessageDecoder {
     private int allRequiredBytes = requiredBytes;
     private int sequence = 0;
     private final int maxPayloadSize;
+    private boolean decodingCompressedBuffer = false;
 
     public BeatsParser() {
         maxPayloadSize = -1;
@@ -56,7 +58,11 @@ public class BeatsParser extends ByteToMessageDecoder {
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
         if (!hasEnoughBytes(in)) {
-            return;
+            if (decodingCompressedBuffer){
+                throw new InvalidFrameProtocolException("Insufficient bytes in compressed content to decode: " + currentState);
+            } else {
+                return;
+            }
         }
 
         switch (currentState) {
@@ -177,19 +183,18 @@ public class BeatsParser extends ByteToMessageDecoder {
         case READ_COMPRESSED_FRAME: {
             logger.trace("Running: READ_COMPRESSED_FRAME");
             // Use the compressed size as the safe start for the buffer.
-            ByteBuf buffer = ctx.alloc().buffer(requiredBytes);
-            try (ByteBufOutputStream buffOutput = new ByteBufOutputStream(buffer);
-                            InflaterOutputStream inflater = new InflaterOutputStream(buffOutput, new Inflater())
-                            ) {
-                in.readBytes(inflater, requiredBytes);
-                transition(States.READ_HEADER);
-                try {
-                    while (buffer.readableBytes() > 0) {
-                        decode(ctx, buffer, out);
-                    }
-                } finally {
-                    buffer.release();
+            ByteBuf buffer = inflateCompressedFrame(ctx, in);
+            transition(States.READ_HEADER);
+
+            decodingCompressedBuffer = true;
+            try {
+                while (buffer.readableBytes() > 0) {
+                    decode(ctx, buffer, out);
                 }
+            } finally {
+                decodingCompressedBuffer = false;
+                buffer.release();
+                transition(States.READ_HEADER);
             }
             break;
         }
@@ -205,6 +210,19 @@ public class BeatsParser extends ByteToMessageDecoder {
             break;
         }
         }
+    }
+
+    private ByteBuf inflateCompressedFrame(ChannelHandlerContext ctx, ByteBuf in) throws IOException {
+        ByteBuf buffer = ctx.alloc().buffer(requiredBytes);
+        Inflater inflater = new Inflater();
+        try (ByteBufOutputStream buffOutput = new ByteBufOutputStream(buffer);
+             InflaterOutputStream inflaterStream = new InflaterOutputStream(buffOutput, inflater)
+        ) {
+            in.readBytes(inflaterStream, requiredBytes);
+        } finally {
+            inflater.end();
+        }
+        return buffer;
     }
 
     private boolean hasEnoughBytes(ByteBuf in) {
