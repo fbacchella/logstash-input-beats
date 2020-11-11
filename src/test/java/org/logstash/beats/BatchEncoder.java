@@ -23,7 +23,7 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
     @Override
     protected void encode(ChannelHandlerContext ctx, Batch batch, ByteBuf out) throws Exception {
         out.writeByte(batch.getProtocol());
-        out.writeByte('W');
+        out.writeByte(Protocol.CODE_WINDOW_SIZE);
         out.writeInt(batch.size());
 
         ByteBuf buffer = getPayload(ctx, batch);
@@ -51,7 +51,7 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
 
     private void encodeMessageWithJson(ByteBuf payload, Message message) throws JsonProcessingException {
         payload.writeByte(Protocol.VERSION_2);
-        payload.writeByte('J');
+        payload.writeByte(Protocol.CODE_JSON_FRAME);
         payload.writeInt(message.getSequence());
 
         byte[] json = Message.MAPPER.get().writeValueAsBytes(message.getData());
@@ -61,7 +61,7 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
 
     private void encodeMessageWithFields(ByteBuf payload, Message message) {
         payload.writeByte(Protocol.VERSION_1);
-        payload.writeByte('D');
+        payload.writeByte(Protocol.CODE_FRAME);
         payload.writeInt(message.getSequence());
         payload.writeInt(message.getData().size());
 

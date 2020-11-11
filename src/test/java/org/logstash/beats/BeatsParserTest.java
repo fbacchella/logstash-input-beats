@@ -207,10 +207,10 @@ public class BeatsParserTest {
         ByteBuf payload = Unpooled.buffer();
 
         payload.writeByte(Protocol.VERSION_1);
-        payload.writeByte('W');
+        payload.writeByte(Protocol.CODE_WINDOW_SIZE);
         payload.writeInt(1);
         payload.writeByte(Protocol.VERSION_1);
-        payload.writeByte('D');
+        payload.writeByte(Protocol.CODE_FRAME);
         payload.writeInt(1);
         payload.writeInt((int)size);
 
@@ -234,10 +234,10 @@ public class BeatsParserTest {
         ByteBuf payload = Unpooled.buffer();
 
         payload.writeByte(Protocol.VERSION_2);
-        payload.writeByte('W');
+        payload.writeByte(Protocol.CODE_WINDOW_SIZE);
         payload.writeInt(1);
         payload.writeByte(Protocol.VERSION_2);
-        payload.writeByte('J');
+        payload.writeByte(Protocol.CODE_JSON_FRAME);
         payload.writeInt(1);
         payload.writeInt((int)l);
 

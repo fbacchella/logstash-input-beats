@@ -22,7 +22,7 @@ public class CompressedBatchEncoder extends BatchEncoder {
                 outputDeflater.close();
                 ByteBuf content = ctx.alloc().buffer(output.writtenBytes());
                 content.writeByte(batch.getProtocol());
-                content.writeByte('C');
+                content.writeByte(Protocol.CODE_COMPRESSED_FRAME);
 
                 content.writeInt(output.writtenBytes());
                 content.writeBytes(output.buffer());

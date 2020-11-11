@@ -14,7 +14,7 @@ public class AckEncoder extends MessageToByteEncoder<Ack> {
     @Override
     protected void encode(ChannelHandlerContext ctx, Ack ack, ByteBuf out) throws Exception {
         out.writeByte(ack.getProtocol());
-        out.writeByte('A');
+        out.writeByte(Protocol.CODE_ACK);
         out.writeInt(ack.getSequence());
     }
 

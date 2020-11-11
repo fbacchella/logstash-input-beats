@@ -12,6 +12,7 @@ public class Protocol {
     public static final byte CODE_JSON_FRAME = 'J';
     public static final byte CODE_COMPRESSED_FRAME = 'C';
     public static final byte CODE_FRAME = 'D';
+    public static final byte CODE_ACK = 'A';
 
     private Protocol() {
 
