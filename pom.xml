@@ -119,7 +119,7 @@
                         <detectLinks>false</detectLinks>
                         <links>
                             <link>https://netty.io/4.0/api/</link>
-                            <link>https://logging.apache.org/log4j/2.0/log4j-api/apidocs</link>
+                            <link>https://logging.apache.org/log4j/2.x/log4j-api/apidocs</link>
                         </links>
                         <keywords>true</keywords>
                     </configuration>
