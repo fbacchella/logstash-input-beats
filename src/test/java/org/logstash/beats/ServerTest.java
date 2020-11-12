@@ -113,6 +113,63 @@ public class ServerTest {
     }
 
     @Test(timeout=10000)
+    public void testOverSizedBatch() throws InterruptedException, ExecutionException {
+        CountDownLatch latch = new CountDownLatch(1);
+        AtomicInteger lastGoodCount = new AtomicInteger();
+        Server server = new Server()
+                        .setHost(host)
+                        .setPort(randomPort)
+                        .setMaxPayloadSize(100)
+                        .setClientInactivityTimeout(1)
+                        .setBeatsHeandlerThreadCount(threadCount)
+                        .setShutdownDelay(100, TimeUnit.MILLISECONDS)
+                        .setChannelClass(NioServerSocketChannel.class);
+
+        server.setMessageListener(new MessageListener() {
+            @Override
+            public void onNewMessage(ChannelHandlerContext ctx, Message message) {
+                lastGoodCount.set(message.getData().size());
+            }
+
+            @Override
+            public void onException(ChannelHandlerContext ctx, Throwable cause) {
+                latch.countDown();
+            }
+        });
+
+        Thread thread = new Thread(() -> serverRun(server));
+        thread.start();
+        server.f.get();
+
+        ChannelFutureListener incrementSender = nf -> this.incrementSend(nf, 1);
+
+        try {
+            ChannelFuture cf = connectClient();
+            cf.addListener(incrementSender);
+            assertThat(latch.await(1, TimeUnit.SECONDS), is(true));
+            assertThat(lastGoodCount.get(), is(6));
+        } finally {
+            server.stop();
+            thread.join();
+        }
+    }
+
+    private void incrementSend(ChannelFuture f, int count) throws InvalidFrameProtocolException {
+        try (V2Batch batch = new V2Batch()) {
+            batch.setBatchSize(1);
+            ByteBuf contents = V2BatchTest.messageContents(count);
+            batch.addMessage(0, contents, contents.readableBytes());
+            ChannelFuture cf = f.channel().writeAndFlush(batch);
+            if (count < 10 && f.channel().isOpen()) {
+                ChannelFutureListener incrementSender = nf -> this.incrementSend(nf, count + 1);
+                cf.addListener(incrementSender);
+            } else {
+                cf.channel().close();
+            }
+        }
+    }
+
+    @Test(timeout=10000)
     public void testServerShouldTerminateConnectionIdleForTooLong() throws InterruptedException, ExecutionException {
         int inactivityTime = 3; // in seconds
         int concurrentConnections = 10;

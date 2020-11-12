@@ -42,17 +42,24 @@ public class BeatsParser extends ByteToMessageDecoder {
 
     private States currentState = States.READ_HEADER;
     private int requiredBytes = States.READ_HEADER.length;
-    private int allRequiredBytes = requiredBytes;
     private int sequence = 0;
     private final int maxPayloadSize;
     private boolean decodingCompressedBuffer = false;
 
+    /**
+     * Create a beats parser with no maximum payload size check.
+     */
     public BeatsParser() {
-        maxPayloadSize = -1;
+        maxPayloadSize = Integer.MAX_VALUE;
     }
 
+    /**
+     * Create a parser with a maximum payload size. Any value less or equal to 0 disable it.
+     * 
+     * @param maxPayloadSize
+     */
     public BeatsParser(int maxPayloadSize) {
-        this.maxPayloadSize = maxPayloadSize;
+        this.maxPayloadSize = maxPayloadSize >= 0 ? maxPayloadSize : Integer.MAX_VALUE;
     }
 
     @Override
@@ -219,6 +226,12 @@ public class BeatsParser extends ByteToMessageDecoder {
              InflaterOutputStream inflaterStream = new InflaterOutputStream(buffOutput, inflater)
         ) {
             in.readBytes(inflaterStream, requiredBytes);
+            if (buffer.readableBytes() > maxPayloadSize) {
+                throw new InvalidFrameProtocolException("Oversized compressed payload: " + buffer.readableBytes());
+            }
+        } catch (IOException | InvalidFrameProtocolException | RuntimeException ex) {
+            buffer.release();
+            throw ex;
         } finally {
             inflater.end();
         }
@@ -237,12 +250,6 @@ public class BeatsParser extends ByteToMessageDecoder {
         logger.trace("{}", () -> "Transition, from: " + currentState + ", to: " + next + ", requiring " + requiredBytes + " bytes");
         this.currentState = next;
         this.requiredBytes = requiredBytes;
-        if (requiredBytes > 0 && maxPayloadSize >= 0) {
-            allRequiredBytes += requiredBytes;
-            if (allRequiredBytes > maxPayloadSize) {
-                throw new InvalidFrameProtocolException("Oversized payload: " + allRequiredBytes);
-            }
-        }
     }
 
     private void batchComplete() {

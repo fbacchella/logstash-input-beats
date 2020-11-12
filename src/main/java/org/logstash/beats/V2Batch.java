@@ -96,9 +96,9 @@ public class V2Batch implements Batch, Closeable {
      * @throws InvalidFrameProtocolException 
      */
     void addMessage(int sequenceNumber, ByteBuf buffer, int size) throws InvalidFrameProtocolException {
-        if ((internalBuffer.capacity() + size + (2 * SIZE_OF_INT)) > maxPayloadSize) {
+        if ((internalBuffer.readableBytes() + size + (2 * SIZE_OF_INT)) > maxPayloadSize) {
             batchSize = written;
-            throw new InvalidFrameProtocolException("Oversized payload: " + (internalBuffer.capacity() + size + (2 * SIZE_OF_INT)));
+            throw new InvalidFrameProtocolException("Oversized payload: " + (internalBuffer.readableBytes() + size + (2 * SIZE_OF_INT)));
         }
         written++;
         if (internalBuffer.writableBytes() < size + (2 * SIZE_OF_INT)) {

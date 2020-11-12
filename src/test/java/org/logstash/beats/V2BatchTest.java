@@ -110,8 +110,8 @@ public class V2BatchTest {
             assertThrows(BeatsParser.InvalidFrameProtocolException.class, () -> {
                 batch.addMessage(70, content.asReadOnly(), content.readableBytes());
             });
-            assertEquals("Oversized payload: 2071", ex.getMessage());
-            assertEquals(69, batch.size());
+            assertEquals("Oversized payload: 2070", ex.getMessage());
+            assertEquals(89, batch.size());
             int i = 0;
             for (Message message : batch) {
                 assertEquals(message.getSequence(), i++);
@@ -152,6 +152,19 @@ public class V2BatchTest {
     public static ByteBuf messageContents() {
         Map<String, String> test = new HashMap<>();
         test.put("key", "value");
+        try {
+            byte[] bytes = MAPPER.writeValueAsBytes(test);
+            return Unpooled.wrappedBuffer(bytes);
+        } catch (Exception e){
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static ByteBuf messageContents(int count) {
+        Map<String, String> test = new HashMap<>(count);
+        for (int i = 0 ; i < count ; i++) {
+            test.put("key" + i, "value");
+        }
         try {
             byte[] bytes = MAPPER.writeValueAsBytes(test);
             return Unpooled.wrappedBuffer(bytes);
