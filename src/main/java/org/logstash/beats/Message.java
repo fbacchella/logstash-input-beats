@@ -1,11 +1,5 @@
 package org.logstash.beats;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.module.afterburner.AfterburnerModule;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufInputStream;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -13,15 +7,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.fasterxml.jackson.databind.ObjectReader;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufInputStream;
+
 public class Message implements Comparable<Message> {
 
     private final int sequence;
     private String identityStream;
     private Map<?, ?> data;
     private Batch batch;
-
-    private static final JsonFactory factory = new JsonFactory();
-    public static final ThreadLocal<ObjectMapper> MAPPER = ThreadLocal.withInitial(() -> new ObjectMapper(factory).registerModule(new AfterburnerModule()));
 
     /**
      * Create a message using a map of key, value pairs
@@ -39,12 +35,16 @@ public class Message implements Comparable<Message> {
      * @param sequence sequence number of the message
      * @param buffer {@link ByteBuf} buffer containing Json object
      */
-    @SuppressWarnings("unchecked")
     public Message(int sequence, ByteBuf buffer) {
+        this(sequence, buffer, DefaultJson.get());
+    }
+
+    @SuppressWarnings("unchecked")
+    public Message(int sequence, ByteBuf buffer, ObjectReader reader) {
         this.sequence = sequence;
         if (buffer.isReadable()) {
             try (InputStream byteBufInputStream = new ByteBufInputStream(buffer)) {
-                data = Collections.unmodifiableMap(MAPPER.get().readValue(byteBufInputStream, Map.class));
+                data = Collections.unmodifiableMap(reader.readValue(byteBufInputStream, Map.class));
             } catch (IOException e) {
                 throw new UncheckedIOException("Unable to parse beats payload ", e);
             }

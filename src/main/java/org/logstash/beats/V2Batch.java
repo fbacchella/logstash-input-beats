@@ -6,6 +6,8 @@ import java.util.NoSuchElementException;
 
 import org.logstash.beats.BeatsParser.InvalidFrameProtocolException;
 
+import com.fasterxml.jackson.databind.ObjectReader;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 
@@ -28,7 +30,7 @@ public class V2Batch implements Batch, Closeable {
             }
             int sequenceNumber = readerBuffer.readInt();
             int readableBytes = readerBuffer.readInt();
-            Message message = new Message(sequenceNumber, readerBuffer.slice(readerBuffer.readerIndex(), readableBytes));
+            Message message = new Message(sequenceNumber, readerBuffer.slice(readerBuffer.readerIndex(), readableBytes), jsonReader);
             readerBuffer.readerIndex(readerBuffer.readerIndex() + readableBytes);
             message.setBatch(V2Batch.this);
             message.getData();
@@ -43,13 +45,21 @@ public class V2Batch implements Batch, Closeable {
     private int batchSize;
     private final int maxPayloadSize;
     private int highestSequence = -1;
+    private final ObjectReader jsonReader;
 
     public V2Batch() {
         maxPayloadSize = Integer.MAX_VALUE;
+        jsonReader = DefaultJson.get();
     }
 
     public V2Batch(int maxPayloadSize) {
         this.maxPayloadSize = maxPayloadSize < 0 ? Integer.MAX_VALUE : maxPayloadSize;
+        jsonReader = DefaultJson.get();
+    }
+
+    public V2Batch(int maxPayloadSize, ObjectReader jsonReader) {
+        this.maxPayloadSize = maxPayloadSize < 0 ? Integer.MAX_VALUE : maxPayloadSize;
+        this.jsonReader = jsonReader;
     }
 
     @Override

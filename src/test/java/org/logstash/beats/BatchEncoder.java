@@ -1,6 +1,8 @@
 package org.logstash.beats;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectWriter;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
@@ -37,11 +39,11 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
 
     protected ByteBuf getPayload(ChannelHandlerContext ctx, Batch batch) throws IOException {
         ByteBuf payload = ctx.alloc().buffer();
-
+        ObjectWriter jsonWriter = DefaultJson.getWriterInstance();
         // Aggregates the payload that we could decide to compress or not.
         for (Message message : batch) {
             if (batch.getProtocol() == Protocol.VERSION_2) {
-                encodeMessageWithJson(payload, message);
+                encodeMessageWithJson(payload, message, jsonWriter);
             } else {
                 encodeMessageWithFields(payload, message);
             }
@@ -49,12 +51,12 @@ public class BatchEncoder extends MessageToByteEncoder<Batch> {
         return payload;
     }
 
-    private void encodeMessageWithJson(ByteBuf payload, Message message) throws JsonProcessingException {
+    private void encodeMessageWithJson(ByteBuf payload, Message message, ObjectWriter jsonWriter) throws JsonProcessingException {
         payload.writeByte(Protocol.VERSION_2);
         payload.writeByte(Protocol.CODE_JSON_FRAME);
         payload.writeInt(message.getSequence());
 
-        byte[] json = Message.MAPPER.get().writeValueAsBytes(message.getData());
+        byte[] json = jsonWriter.writeValueAsBytes(message.getData());
         payload.writeInt(json.length);
         payload.writeBytes(json);
     }

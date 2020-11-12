@@ -11,6 +11,8 @@ import java.util.zip.InflaterOutputStream;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.fasterxml.jackson.databind.ObjectReader;
+
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.ChannelHandlerContext;
@@ -45,21 +47,35 @@ public class BeatsParser extends ByteToMessageDecoder {
     private int sequence = 0;
     private final int maxPayloadSize;
     private boolean decodingCompressedBuffer = false;
+    private final ObjectReader jsonReader;
 
     /**
      * Create a beats parser with no maximum payload size check.
      */
     public BeatsParser() {
         maxPayloadSize = Integer.MAX_VALUE;
+        jsonReader = DefaultJson.get();
     }
 
     /**
-     * Create a parser with a maximum payload size. Any value less or equal to 0 disable it.
+     * Create a parser with a maximum payload size. If value is less that 0, it's not checked.
      * 
      * @param maxPayloadSize
      */
     public BeatsParser(int maxPayloadSize) {
         this.maxPayloadSize = maxPayloadSize >= 0 ? maxPayloadSize : Integer.MAX_VALUE;
+        jsonReader = DefaultJson.get();
+    }
+
+    /**
+     * Create a parser with a maximum payload size and a non default JSON reader. Any value less or equal to 0 for the max payload disable check.
+     * 
+     * @param maxPayloadSize
+     * @param jsonReader
+     */
+    public BeatsParser(int maxPayloadSize, ObjectReader jsonReader) {
+        this.maxPayloadSize = maxPayloadSize >= 0 ? maxPayloadSize : Integer.MAX_VALUE;
+        this.jsonReader = jsonReader;
     }
 
     @Override
@@ -81,7 +97,7 @@ public class BeatsParser extends ByteToMessageDecoder {
                 if (batch == null) {
                     if (Protocol.isVersion2(currentVersion)) {
                         logger.trace("Frame version 2 detected");
-                        batch = new V2Batch(maxPayloadSize);
+                        batch = new V2Batch(maxPayloadSize, jsonReader);
                     } else if (Protocol.isVersion1(currentVersion)) {
                         logger.trace("Frame version 1 detected");
                         batch = new V1Batch();
