@@ -7,6 +7,10 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.time.Duration;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,16 +40,18 @@ public class Server {
     private int port;
     private String host;
     private int clientInactivityTimeoutSeconds;
+    private int maxPayloadSize = BeatsInitializer.DEFAULT_MAX_PAYLOAD_SIZE;
     private int beatsHeandlerThreadCount = 1;
-    private Class<? extends EventLoopGroup> workGroupClass = NioEventLoopGroup.class;
+    private Supplier<EventLoopGroup> workGroupSupplier = NioEventLoopGroup::new;
     private EventLoopGroup workGroup;
     private Class<? extends ServerChannel> channelClass = NioServerSocketChannel.class;
     private ChannelFactory<? extends ServerChannel> channelFactory = null;
     private IMessageListener messageListener = new MessageListener();
     private SslContext tlsContext = null;
     private BeatsInitializer beatsInitializer = null;
-
-
+    private Channel listenChannel = null;
+    private Duration shutdownDelay = Duration.ofSeconds(5);
+    public final CompletableFuture<Channel> f = new CompletableFuture<>();
     public Server() {
         try {
             host = InetAddress.getLocalHost().getHostAddress();
@@ -69,6 +75,11 @@ public class Server {
         return this;
     }
 
+    public Server setMaxPayloadSize(int maxPayloadSize) {
+        this.maxPayloadSize = maxPayloadSize;
+        return this;
+    }
+
     public Server setBeatsHeandlerThreadCount(int beatsHeandlerThreadCount) {
         this.beatsHeandlerThreadCount = beatsHeandlerThreadCount;
         return this;
@@ -80,7 +91,17 @@ public class Server {
     }
 
     public Server setEventLoopGroupClass(Class<? extends EventLoopGroup> workGroupClass) {
-        this.workGroupClass = workGroupClass;
+        try {
+            workGroup = workGroupClass.getDeclaredConstructor().newInstance();
+            this.workGroupSupplier = () -> workGroup;
+            return this;
+        } catch (SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException e) {
+            throw new IllegalArgumentException("Class " + workGroupClass.getName() + " can't be used for a workgroup", e);
+        }
+    }
+
+    public Server setEventLoopGroupSupplier(Supplier<EventLoopGroup> workGroupClass) {
+        this.workGroupSupplier = workGroupClass;
         return this;
     }
 
@@ -98,28 +119,29 @@ public class Server {
         messageListener = listener;
         return this;
     }
+    
+    public Server setShutdownDelay(long amount, TimeUnit unit) {
+        shutdownDelay = Duration.ofMillis(unit.toMillis(amount));
+        return this;
+    }
 
     public Server listen() throws InterruptedException, IllegalArgumentException, IllegalStateException {
         if (workGroup != null) {
             try {
                 logger.debug("Shutting down existing worker group before starting");
-                workGroup.shutdownGracefully().sync();
+                workGroup.shutdownGracefully(shutdownDelay.toMillis(), shutdownDelay.toMillis() * 2, TimeUnit.MILLISECONDS).sync();
             } catch (Exception e) {
                 logger.error("Could not shut down worker group before starting", e);
                 throw new IllegalStateException("Could not shut down worker group before starting", e);
             }
         }
-        try {
-            workGroup = workGroupClass.getDeclaredConstructor().newInstance();
-        } catch (InstantiationException | IllegalAccessException | ClassCastException | InvocationTargetException | NoSuchMethodException | SecurityException e) {
-            throw new IllegalArgumentException("Class " + workGroupClass.getName() + " can't be used for a workgroup", e);
-        }
+        workGroup = workGroupSupplier.get();
         try {
             logger.info("Starting server on port: {}", port);
 
             beatsInitializer = new BeatsInitializer(tlsContext,
                                                     messageListener, clientInactivityTimeoutSeconds,
-                                                    beatsHeandlerThreadCount);
+                                                    beatsHeandlerThreadCount, maxPayloadSize);
 
             ServerBootstrap server = new ServerBootstrap();
             server.group(workGroup)
@@ -135,8 +157,9 @@ public class Server {
                 throw new IllegalArgumentException("No usable channel source");
             }
 
-            Channel channel = server.bind(host, port).sync().channel();
-            channel.closeFuture().sync();
+            listenChannel = server.bind(host, port).sync().channel();
+            f.complete(listenChannel);
+            listenChannel.closeFuture().sync();
         } finally {
             shutdown();
         }
@@ -146,17 +169,19 @@ public class Server {
 
     public void stop() {
         logger.debug("Server shutting down");
-        shutdown();
+        listenChannel.close();
         logger.debug("Server stopped");
     }
 
     private void shutdown() {
         try {
             if (workGroup != null) {
-                workGroup.shutdownGracefully().sync();
+                workGroup.shutdownGracefully(shutdownDelay.toMillis(), shutdownDelay.toMillis() * 2, TimeUnit.MILLISECONDS).sync();
+                workGroup = null;
             }
             if (beatsInitializer != null) {
                 beatsInitializer.shutdownEventExecutor();
+                beatsInitializer = null;
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -176,18 +201,21 @@ public class Server {
 
         private static final int DEFAULT_IDLESTATEHANDLER_THREAD = 4;
         private static final int IDLESTATE_WRITER_IDLE_TIME_SECONDS = 5;
+        private static final int DEFAULT_MAX_PAYLOAD_SIZE = -1;
 
         private final EventExecutorGroup idleExecutorGroup;
         private final EventExecutorGroup beatsHandlerExecutorGroup;
         private final IMessageListener localMessageListener;
         private final int localClientInactivityTimeoutSeconds;
         private final SslContext localTlsContext;
+        private final int maxPayloadSize;
 
-        BeatsInitializer(SslContext tlsContext, IMessageListener messageListener, int clientInactivityTimeoutSeconds, int beatsHandlerThread) {
+        BeatsInitializer(SslContext tlsContext, IMessageListener messageListener, int clientInactivityTimeoutSeconds, int beatsHandlerThread, int maxPayloadSize) {
             // Keeps a local copy of Server settings, so they can't be modified once it starts listening
             this.localTlsContext = tlsContext;
             this.localMessageListener = messageListener;
             this.localClientInactivityTimeoutSeconds = clientInactivityTimeoutSeconds;
+            this.maxPayloadSize = maxPayloadSize;
             idleExecutorGroup = new DefaultEventExecutorGroup(DEFAULT_IDLESTATEHANDLER_THREAD);
             beatsHandlerExecutorGroup = new DefaultEventExecutorGroup(beatsHandlerThread);
         }
@@ -204,7 +232,7 @@ public class Server {
                              new IdleStateHandler(localClientInactivityTimeoutSeconds, IDLESTATE_WRITER_IDLE_TIME_SECONDS, localClientInactivityTimeoutSeconds));
             pipeline.addLast(BEATS_ACKER, new AckEncoder());
             pipeline.addLast(CONNECTION_HANDLER, new ConnectionHandler());
-            pipeline.addLast(beatsHandlerExecutorGroup, new BeatsParser(), new BeatsHandler(localMessageListener));
+            pipeline.addLast(beatsHandlerExecutorGroup, new BeatsParser(maxPayloadSize), new BeatsHandler(localMessageListener));
         }
 
         @Override
@@ -219,8 +247,8 @@ public class Server {
 
         public void shutdownEventExecutor() {
             try {
-                idleExecutorGroup.shutdownGracefully().sync();
-                beatsHandlerExecutorGroup.shutdownGracefully().sync();
+                idleExecutorGroup.shutdownGracefully(shutdownDelay.toMillis(), shutdownDelay.toMillis() * 2, TimeUnit.MILLISECONDS).sync();
+                beatsHandlerExecutorGroup.shutdownGracefully(shutdownDelay.toMillis(), shutdownDelay.toMillis() * 2, TimeUnit.MILLISECONDS).sync();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException(e);

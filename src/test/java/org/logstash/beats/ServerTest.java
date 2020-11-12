@@ -1,18 +1,19 @@
 package org.logstash.beats;
 
-import static java.lang.Thread.sleep;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.number.IsCloseTo.closeTo;
 
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.Random;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.logstash.beats.BeatsParser.InvalidFrameProtocolException;
@@ -25,12 +26,10 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-
 
 public class ServerTest {
 
@@ -45,8 +44,13 @@ public class ServerTest {
         group = new NioEventLoopGroup();
     }
 
+    @After
+    public void shutdown() {
+        group.shutdownGracefully(100, 200, TimeUnit.MILLISECONDS);
+    }
+
     @Test
-    public void testServerShouldTerminateConnectionWhenExceptionHappen() throws InterruptedException {
+    public void testServerShouldTerminateConnectionWhenExceptionHappen() throws InterruptedException, ExecutionException {
         int inactivityTime = 3; // in seconds
         int concurrentConnections = 10;
 
@@ -59,7 +63,7 @@ public class ServerTest {
                         .setPort(randomPort)
                         .setClientInactivityTimeout(inactivityTime)
                         .setBeatsHeandlerThreadCount(threadCount)
-                        .setEventLoopGroupClass(NioEventLoopGroup.class)
+                        .setShutdownDelay(100, TimeUnit.MILLISECONDS)
                         .setChannelClass(NioServerSocketChannel.class);
 
         final AtomicBoolean otherCause = new AtomicBoolean(false);
@@ -91,33 +95,25 @@ public class ServerTest {
             }
         });
 
-        Runnable serverTask = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    server.listen();
-                } catch (InterruptedException e) {
-                }
-            }
-        };
-
-        Thread thread = new Thread(serverTask);
+        Thread thread = new Thread(() -> serverRun(server));
         thread.start();
-        sleep(1000); // give some time to travis..
+        server.f.get();
 
         try {
+            ChannelFutureListener cfl = this::simpleSend;
             for (int i = 0; i < concurrentConnections; i++) {
-                connectClient();
+                connectClient().addListener(cfl);
             }
             assertThat(latch.await(10, TimeUnit.SECONDS), is(true));
             assertThat(otherCause.get(), is(false));
         } finally {
             server.stop();
+            thread.join();
         }
     }
 
-    @Test
-    public void testServerShouldTerminateConnectionIdleForTooLong() throws InterruptedException {
+    @Test(timeout=10000)
+    public void testServerShouldTerminateConnectionIdleForTooLong() throws InterruptedException, ExecutionException {
         int inactivityTime = 3; // in seconds
         int concurrentConnections = 10;
 
@@ -126,22 +122,13 @@ public class ServerTest {
         Server server = new Server()
                         .setHost(host)
                         .setPort(randomPort)
+                        .setShutdownDelay(100, TimeUnit.MILLISECONDS)
                         .setClientInactivityTimeout(inactivityTime)
-                        .setBeatsHeandlerThreadCount(threadCount)
-                        .setEventLoopGroupClass(NioEventLoopGroup.class)
-                        .setChannelClass(NioServerSocketChannel.class);
+                        .setBeatsHeandlerThreadCount(threadCount);
         server.setMessageListener(new MessageListener() {
-            @Override
-            public void onNewConnection(ChannelHandlerContext ctx) {
-            }
-
             @Override
             public void onConnectionClose(ChannelHandlerContext ctx) {
                 latch.countDown();
-            }
-
-            @Override
-            public void onNewMessage(ChannelHandlerContext ctx, Message message) {
             }
 
             @Override
@@ -150,19 +137,9 @@ public class ServerTest {
             }
         });
 
-        Runnable serverTask = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    server.listen();
-                } catch (InterruptedException e) {
-                }
-            }
-        };
-
-        Thread thread = new Thread(serverTask);
+        Thread thread = new Thread(() -> serverRun(server));
         thread.start();
-        sleep(1000); // give some time to travis..
+        server.f.get();
 
         try {
             long started = System.currentTimeMillis();
@@ -179,79 +156,60 @@ public class ServerTest {
             assertThat(exceptionClose.get(), is(false));
         } finally {
             server.stop();
+            thread.join();
         }
     }
 
-    @Test(timeout=30000)
-    public void testServerShouldAcceptConcurrentConnection() throws InterruptedException {
-        SpyListener listener = new SpyListener();
-        Server server = new Server()
-                        .setHost(host)
-                        .setPort(randomPort)
-                        .setMessageListener(listener)
-                        .setClientInactivityTimeout(30)
-                        .setBeatsHeandlerThreadCount(threadCount)
-                        .setEventLoopGroupClass(NioEventLoopGroup.class)
-                        .setChannelClass(NioServerSocketChannel.class);
-        Runnable serverTask = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    server.listen();
-                } catch (InterruptedException e) {
-                }
-            }
-        };
-
-        new Thread(serverTask).start();
-        sleep(1000); // start server give is some time.
-
+    @Test(timeout=10000)
+    public void testServerShouldAcceptConcurrentConnection() throws InterruptedException, ExecutionException {
         // Each connection is sending 1 batch.
         int ConcurrentConnections = 5;
 
-        for (int i = 0; i < ConcurrentConnections; i++) {
-            Runnable clientTask = new Runnable(){
+        CountDownLatch latch = new CountDownLatch(ConcurrentConnections);
+        CountDownLatch startLatch = new CountDownLatch(1);
 
-                @Override
-                public void run() {
-                    try {
+        Server server = new Server()
+                        .setHost(host)
+                        .setPort(randomPort)
+                        .setClientInactivityTimeout(30)
+                        .setBeatsHeandlerThreadCount(threadCount);
 
-                        connectClient().addListener(new ChannelFutureListener() {
-                            @Override
-                            public void operationComplete(ChannelFuture future) throws Exception {
-                            }
-                        });
-
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            };
-
-            new Thread(clientTask).start();
-        }
-        // HACK: I didn't not find a nice solutions to test if the connection was still
-        // open on the client without actually sending data down the wire.
-        int iteration = 0;
-        int maxIteration = 30;
-
-        while (listener.getReceivedCount() < ConcurrentConnections) {
-            Thread.sleep(1000);
-            iteration++;
-
-            if (iteration >= maxIteration) {
-                break;
+        server.setMessageListener(new MessageListener() {
+            @Override
+            public void onNewMessage(ChannelHandlerContext ctx, Message message) {
+                latch.countDown();
             }
+        });
 
+        new Thread(() -> serverRun(server)).start();
+        server.f.get();
+
+        ChannelFutureListener opCompleted = f -> operationComplete(startLatch, f);
+        for (int i = 0; i < ConcurrentConnections; i++) {
+            new Thread(() -> connect(startLatch, opCompleted)).start();
         }
-        assertThat(listener.getReceivedCount(), is(ConcurrentConnections));
 
-        group.shutdownGracefully();
+        startLatch.countDown();
+        latch.await();
         server.stop();
-
     }
 
-    public ChannelFuture connectClient() throws InterruptedException {
+    private void operationComplete(CountDownLatch startLatch, ChannelFuture future) throws InvalidFrameProtocolException, InterruptedException {
+        startLatch.await();
+        simpleSend(future);
+        future.channel().close();
+    }
+
+    private void connect(CountDownLatch startLatch, ChannelFutureListener opCompleted) {
+        try {
+            startLatch.await();
+            connectClient().addListener(opCompleted);
+        } catch (InterruptedException e) {
+            throw new CompletionException(e);
+        }
+    }
+
+    public ChannelFuture connectClient() {
         Bootstrap b = new Bootstrap();
         b.group(group)
         .channel(NioSocketChannel.class)
@@ -260,54 +218,17 @@ public class ServerTest {
             public void initChannel(SocketChannel ch) throws Exception {
                 ChannelPipeline pipeline = ch.pipeline();
                 pipeline.addLast(new BatchEncoder());
-                pipeline.addLast(new DummyV2Sender());
             }
         });
         return b.connect("localhost", randomPort);
     }
 
-    /**
-     * A dummy class to send a unique batch to an active server
-     *
-     */
-    private class DummyV2Sender extends SimpleChannelInboundHandler<String> {
-        public void channelActive(ChannelHandlerContext ctx) throws InvalidFrameProtocolException {
-            V2Batch batch = new V2Batch();
+    private void simpleSend(ChannelFuture f) throws InvalidFrameProtocolException {
+        try (V2Batch batch = new V2Batch()) {
             batch.setBatchSize(1);
             ByteBuf contents = V2BatchTest.messageContents();
             batch.addMessage(1, contents, contents.readableBytes());
-
-            ctx.writeAndFlush(batch);
-            batch.release();
-        }
-
-        @Override
-        protected void channelRead0(ChannelHandlerContext ctx, String msg) throws Exception {
-        }
-
-        @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-            ctx.close();
-        }
-    }
-
-    /**
-     *  Used to assert the number of messages send to the server
-     */
-    private class SpyListener extends MessageListener {
-        private AtomicInteger receivedCount;
-
-        SpyListener() {
-            super();
-            receivedCount = new AtomicInteger(0);
-        }
-
-        public void onNewMessage(ChannelHandlerContext ctx, Message message) {
-            receivedCount.incrementAndGet();
-        }
-
-        public int getReceivedCount() {
-            return receivedCount.get();
+            f.channel().writeAndFlush(batch);
         }
     }
 
@@ -321,6 +242,13 @@ public class ServerTest {
             return ss.getLocalPort();
         } catch (IOException e) {
             return -1;
+        }
+    }
+
+    private void serverRun(Server s) {
+        try {
+            s.listen();
+        } catch (InterruptedException e) {
         }
     }
 
