@@ -14,6 +14,29 @@ import io.netty.buffer.PooledByteBufAllocator;
  */
 public class V2Batch implements Batch, Closeable {
 
+    private class MessageIterator implements Iterator<Message> {
+        private int read = 0;
+        private final ByteBuf readerBuffer = internalBuffer.asReadOnly().resetReaderIndex();
+        @Override
+        public boolean hasNext() {
+            return read < written;
+        }
+        @Override
+        public Message next() {
+            if (read >= written) {
+                throw new NoSuchElementException();
+            }
+            int sequenceNumber = readerBuffer.readInt();
+            int readableBytes = readerBuffer.readInt();
+            Message message = new Message(sequenceNumber, readerBuffer.slice(readerBuffer.readerIndex(), readableBytes));
+            readerBuffer.readerIndex(readerBuffer.readerIndex() + readableBytes);
+            message.setBatch(V2Batch.this);
+            message.getData();
+            read++;
+            return message;
+        }
+    }
+
     private ByteBuf internalBuffer = PooledByteBufAllocator.DEFAULT.buffer();
     private int written = 0;
     private static final int SIZE_OF_INT = 4;
@@ -35,27 +58,7 @@ public class V2Batch implements Batch, Closeable {
     }
 
     public Iterator<Message> iterator() {
-        return new Iterator<Message>() {
-            private int read = 0;
-            private ByteBuf readerBuffer = internalBuffer.asReadOnly().resetReaderIndex();
-            @Override
-            public boolean hasNext() {
-                return read < written;
-            }
-            @Override
-            public Message next() {
-                if (read >= written) {
-                    throw new NoSuchElementException();
-                }
-                int sequenceNumber = readerBuffer.readInt();
-                int readableBytes = readerBuffer.readInt();
-                Message message = new Message(sequenceNumber, readerBuffer.slice(readerBuffer.readerIndex(), readableBytes));
-                readerBuffer.readerIndex(readerBuffer.readerIndex() + readableBytes);
-                message.setBatch(V2Batch.this);
-                read++;
-                return message;
-            }
-        };
+        return new MessageIterator();
     }
 
     @Override
