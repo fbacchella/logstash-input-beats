@@ -67,7 +67,7 @@ public class BeatsParserTest {
     }
 
     @Test
-    public void testEncodingDecodingJson() {
+    public void testEncodingDecodingV1() {
         Batch decodedBatch = decodeBatch(v1Batch);
         assertMessages(v1Batch, decodedBatch);
         decodedBatch.release();

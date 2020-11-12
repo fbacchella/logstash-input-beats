@@ -13,9 +13,10 @@ public class CompressedBatchEncoder extends BatchEncoder {
     @Override
     protected ByteBuf getPayload(ChannelHandlerContext ctx, Batch batch) throws IOException {
         ByteBuf payload = super.getPayload(ctx, batch);
+        ByteBuf outBuffer = ctx.alloc().buffer();
         try {
-            try (ByteBufOutputStream output = new ByteBufOutputStream(ctx.alloc().buffer())) {
-                DeflaterOutputStream outputDeflater = new DeflaterOutputStream(output, new Deflater());
+            try (ByteBufOutputStream output = new ByteBufOutputStream(outBuffer);
+                 DeflaterOutputStream outputDeflater = new DeflaterOutputStream(output, new Deflater());) {
                 byte[] chunk = new byte[payload.readableBytes()];
                 payload.readBytes(chunk);
                 outputDeflater.write(chunk);
@@ -30,8 +31,8 @@ public class CompressedBatchEncoder extends BatchEncoder {
             }
         } finally {
             payload.release();
+            outBuffer.release();
         }
-
     }
 
 }
