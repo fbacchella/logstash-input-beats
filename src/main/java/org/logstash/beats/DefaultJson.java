@@ -17,4 +17,8 @@ class DefaultJson {
         return mapper.writer();
     }
 
+    private DefaultJson() {
+        
+    }
+
 }

@@ -1,16 +1,16 @@
 package org.logstash.beats;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import io.netty.channel.ChannelDuplexHandler;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.util.AttributeKey;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Manages the connection state to the beats client.
@@ -68,7 +68,7 @@ public class ConnectionHandler extends ChannelDuplexHandler {
                     ChannelFuture f = ctx.writeAndFlush(new Ack(Protocol.VERSION_2, 0));
                     if (logger.isTraceEnabled()) {
                         logger.trace("{}: sending keep alive ack to libbeat", ctx.channel().id().asShortText());
-                        f.addListener((ChannelFutureListener) future -> {
+                        f.addListener(future -> {
                             if (future.isSuccess()) {
                                 logger.trace("{}: acking was successful", ctx.channel().id().asShortText());
                             } else {

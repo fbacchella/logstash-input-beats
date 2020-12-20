@@ -249,6 +249,7 @@ public class ServerTest {
         startLatch.countDown();
         latch.await();
         server.stop();
+        // No tests, releasing the latch is the expected result.
     }
 
     private void operationComplete(CountDownLatch startLatch, ChannelFuture future) throws InvalidFrameProtocolException, InterruptedException {

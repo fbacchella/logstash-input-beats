@@ -227,11 +227,7 @@ public class BeatsParser extends ByteToMessageDecoder {
             }
             case READ_JSON: {
                 logger.trace("Running: READ_JSON");
-                try {
-                    ((V2Batch) batch).addMessage(sequence, in, requiredBytes);
-                } catch (InvalidFrameProtocolException | RuntimeException ex) {
-                    throw ex;
-                }
+                ((V2Batch) batch).addMessage(sequence, in, requiredBytes);
                 if (batch.isComplete()) {
                     batchComplete(out);
                 }
@@ -268,11 +264,11 @@ public class BeatsParser extends ByteToMessageDecoder {
         return in.readableBytes() >= requiredBytes;
     }
 
-    private void transition(States next) throws InvalidFrameProtocolException {
+    private void transition(States next) {
         transition(next, next.length);
     }
 
-    private void transition(States next, int requiredBytes) throws InvalidFrameProtocolException {
+    private void transition(States next, int requiredBytes) {
         logger.trace("{}", () -> "Transition, from: " + currentState + ", to: " + next + ", requiring " + requiredBytes + " bytes");
         this.currentState = next;
         this.requiredBytes = requiredBytes;
