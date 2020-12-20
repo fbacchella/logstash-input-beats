@@ -21,14 +21,14 @@ public class V1BatchTest {
     @Test
     public void testIsEmpty() {
         assertTrue(batch.isEmpty());
-        batch.addMessage(new Message(1, new HashMap<Object, Object>()));
+        batch.addMessage(new Message(1, new HashMap<String, Object>()));
         assertFalse(batch.isEmpty());
     }
 
     @Test
     public void testSize() {
         assertEquals(0, batch.size());
-        batch.addMessage(new Message(1, new HashMap<Object, Object>()));
+        batch.addMessage(new Message(1, new HashMap<String, Object>()));
         assertEquals(1, batch.size());
     }
 
@@ -44,7 +44,7 @@ public class V1BatchTest {
         batch.setBatchSize(numberOfEvent);
 
         for (int i = 1; i <= numberOfEvent; i++) {
-            batch.addMessage(new Message(i, new HashMap<Object, Object>()));
+            batch.addMessage(new Message(i, new HashMap<String, Object>()));
         }
 
         assertTrue(batch.isComplete());
@@ -82,7 +82,7 @@ public class V1BatchTest {
 
         batch.setBatchSize(numberOfEvent);
 
-        batch.addMessage(new Message(1, new HashMap<Object, Object>()));
+        batch.addMessage(new Message(1, new HashMap<String, Object>()));
 
         assertFalse(batch.isComplete());
     }

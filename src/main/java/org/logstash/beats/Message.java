@@ -16,7 +16,7 @@ public class Message implements Comparable<Message> {
 
     private final int sequence;
     private String identityStream;
-    private Map<?, ?> data;
+    private Map<String, Object> data;
     private Batch batch;
 
     /**
@@ -24,7 +24,7 @@ public class Message implements Comparable<Message> {
      * @param sequence sequence number of the message
      * @param map key/value pairs representing the message
      */
-    public Message(int sequence, Map<?, ?> map) {
+    public Message(int sequence, Map<String, ? extends Object> map) {
         this.sequence = sequence;
         this.data = Collections.unmodifiableMap(new HashMap<>(map));
     }
@@ -65,7 +65,7 @@ public class Message implements Comparable<Message> {
      * Returns a list of key/value pairs representing the contents of the message.
      * @return {@link Map} Map of key/value pairs
      */
-    public Map<?, ?> getData() {
+    public Map<String, Object> getData() {
         return data;
     }
 
