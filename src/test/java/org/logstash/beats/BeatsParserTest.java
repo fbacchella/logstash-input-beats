@@ -151,7 +151,7 @@ public class BeatsParserTest {
     @Test
     public void testOversizedJson() {
         thrown.expectCause(isA(BeatsParser.InvalidFrameProtocolException.class));
-        thrown.expectMessage("Oversized payload: 62");
+        thrown.expectMessage("Oversized payload: 54");
 
         Batch decodedBatch = decodeBatch(byteBufBatch, 9);
         assertMessages(byteBufBatch, decodedBatch);

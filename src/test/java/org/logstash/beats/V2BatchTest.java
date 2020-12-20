@@ -110,8 +110,8 @@ public class V2BatchTest {
             assertThrows(BeatsParser.InvalidFrameProtocolException.class, () -> {
                 batch.addMessage(70, content.asReadOnly(), content.readableBytes());
             });
-            assertEquals("Oversized payload: 2070", ex.getMessage());
-            assertEquals(89, batch.size());
+            assertEquals("Oversized payload: 2055", ex.getMessage());
+            assertEquals(136, batch.size());
             int i = 0;
             for (Message message : batch) {
                 assertEquals(message.getSequence(), i++);
