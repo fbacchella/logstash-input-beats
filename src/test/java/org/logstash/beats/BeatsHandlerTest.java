@@ -111,7 +111,7 @@ public class BeatsHandlerTest {
         embeddedChannel.writeInbound(batch);
         assertEquals(messageCount, spyListener.getLastMessages().size());
         Ack ack = embeddedChannel.readOutbound();
-        assertEquals(ack.getProtocol(), Protocol.VERSION_1);
+        assertEquals(Protocol.VERSION_1, ack.getProtocol());
         assertEquals(ack.getSequence(), startSequenceNumber + messageCount - 1);
         embeddedChannel.close();
     }

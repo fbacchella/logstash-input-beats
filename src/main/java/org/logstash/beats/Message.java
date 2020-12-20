@@ -12,6 +12,10 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufInputStream;
 
+/**
+ *
+ * Note: this class has a natural ordering that is inconsistent with equals.
+ */
 public class Message implements Comparable<Message> {
 
     private final int sequence;

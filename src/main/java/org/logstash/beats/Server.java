@@ -125,7 +125,14 @@ public class Server {
         return this;
     }
 
-    public Server listen() throws InterruptedException, IllegalArgumentException, IllegalStateException {
+    /**
+     * Start the server listen.
+     * @return the listening server.
+     * @throws InterruptedException
+     * @throws IllegalArgumentException
+     * @throws IllegalStateException
+     */
+    public Server listen() throws InterruptedException {
         if (workGroup != null) {
             try {
                 logger.debug("Shutting down existing worker group before starting");
