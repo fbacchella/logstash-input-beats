@@ -15,7 +15,7 @@ jobs:
                 # A bug in dependency:go-offline, see https://issues.apache.org/jira/browse/MDEP-688
                 command: "mvn -B dependency:resolve dependency:resolve-plugins -Psonar,versions -s .circleci/settings.xml"
                 environment:
-                    JAVA_HOME: /usr/local/openjdk-14
+                    JAVA_HOME: /usr/local/openjdk-15
                     MAVEN_OPTS: "-Xmx1024m"
             - persist_to_workspace:
                 root: /
