@@ -13,7 +13,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <jdk.compile.home>${jdk.8.home}</jdk.compile.home>
         <bootclasspath>${jdk.compile.home}/jre/lib/rt.jar</bootclasspath>
-        <log4j>2.13.3</log4j>
+        <log4j>2.14.0</log4j>
         <surefire.version>3.0.0-M5</surefire.version>
     </properties>
 
@@ -21,13 +21,13 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13</version>
+            <version>4.13.1</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-handler</artifactId>
-            <version>4.1.51.Final</version>
+            <version>4.1.56.Final</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -44,7 +44,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.module</groupId>
             <artifactId>jackson-module-afterburner</artifactId>
-            <version>2.11.2</version>
+            <version>2.12.0</version>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
