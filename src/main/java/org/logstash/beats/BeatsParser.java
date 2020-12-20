@@ -170,18 +170,16 @@ public class BeatsParser extends ByteToMessageDecoder {
                     if (currentPayload > maxPayloadSize) {
                         throw new InvalidFrameProtocolException("Oversized payload: " + currentPayload);
                     }
-                    ByteBuf fieldBuf = in.readBytes(fieldLength);
+                    ByteBuf fieldBuf = in.readSlice(fieldLength);
                     String field = fieldBuf.toString(StandardCharsets.UTF_8);
-                    fieldBuf.release();
 
                     int dataLength = tryReadUnsigned(in, "Oversized field data length", true);
                     currentPayload += dataLength;
                     if (currentPayload > maxPayloadSize) {
                         throw new InvalidFrameProtocolException("Oversized payload: " + currentPayload);
                     }
-                    ByteBuf dataBuf = in.readBytes(dataLength);
+                    ByteBuf dataBuf = in.readSlice(dataLength);
                     String data = dataBuf.toString(StandardCharsets.UTF_8);
-                    dataBuf.release();
 
                     dataMap.put(field, data);
                 }
