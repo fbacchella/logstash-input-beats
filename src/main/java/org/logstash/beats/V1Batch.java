@@ -10,7 +10,7 @@ import java.util.List;
  */
 public class V1Batch implements Batch {
 
-    private int batchSize;
+    private int batchSize = 0;
     private List<Message> messages = new ArrayList<>();
     private int highestSequence = -1;
 
@@ -62,18 +62,10 @@ public class V1Batch implements Batch {
     }
 
     @Override
-    public boolean isComplete() {
-        return size() == getBatchSize();
-    }
-
-    @Override
     public void release() {
-        //no-op
-    }
-
-    @Override
-    public void close() {
-        //no-op
+        messages.clear();
+        highestSequence = -1;
+        batchSize = 0;
     }
 
 }

@@ -16,7 +16,7 @@ import io.netty.buffer.ByteBuf;
  */
 public class V2Batch implements Batch, Closeable {
 
-    private int batchSize;
+    private int batchSize = 0;
     private final int maxPayloadSize;
     private int batchBytes = 0;
     private int highestSequence = -1;
@@ -68,11 +68,6 @@ public class V2Batch implements Batch, Closeable {
     }
 
     @Override
-    public boolean isComplete() {
-        return messages.size() == batchSize;
-    }
-
-    @Override
     public int getHighestSequence() {
         return highestSequence;
     }
@@ -100,11 +95,10 @@ public class V2Batch implements Batch, Closeable {
 
     @Override
     public void release() {
-    }
-
-    @Override
-    public void close() {
-        release();
+        messages.clear();
+        batchBytes = 0;
+        highestSequence = -1;
+        batchSize = 0;
     }
 
 }

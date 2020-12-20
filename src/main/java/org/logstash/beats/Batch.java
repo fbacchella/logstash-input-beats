@@ -47,12 +47,20 @@ public interface Batch extends Iterable<Message>, Closeable {
      * Is the batch complete?
      * @return boolean
      */
-    boolean isComplete();
+    public default boolean isComplete() {
+        return size() == getBatchSize();
+    }
+
 
     /**
      * Release the resources associated with the batch. Consumers of the batch *must* release
      * after use.
      */
     void release();
+
+    @Override
+    public default void close() {
+        release();
+    }
 
 }
