@@ -235,7 +235,6 @@ public class BeatsParser extends ByteToMessageDecoder {
                     throw ex;
                 }
                 if (batch.isComplete()) {
-                    logger.trace("{}", () -> "Sending batch size: " + batch.size() + ", windowSize: " + batch.getBatchSize() + " , seq: " + sequence);
                     batchComplete(out);
                 }
                 transition(States.READ_HEADER);
@@ -282,6 +281,7 @@ public class BeatsParser extends ByteToMessageDecoder {
     }
 
     private void batchComplete(List<Object> out) {
+        logger.trace("{}", () -> "Sending batch size: " + batch.size() + ", windowSize: " + batch.getBatchSize() + " , seq: " + sequence);
         requiredBytes = 0;
         sequence = 0;
         out.add(batch);

@@ -91,7 +91,6 @@ public class BeatsParserTest {
     public void testEncodingDecodingFieldWithUTFCharacters() throws Exception {
         V2Batch v2Batch = new V2Batch();
 
-
         // Generate Data with Keys and String with UTF-8
         for (int i = 0; i < numberOfMessage + 1; i++) {
             ByteBuf payload = Unpooled.buffer();
